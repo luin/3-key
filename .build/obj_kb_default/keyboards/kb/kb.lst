@@ -1,0 +1,39 @@
+   1               		.file	"kb.c"
+   2               	__SP_H__ = 0x3e
+   3               	__SP_L__ = 0x3d
+   4               	__SREG__ = 0x3f
+   5               	__tmp_reg__ = 0
+   6               	__zero_reg__ = 1
+   7               		.text
+   8               	.Ltext0:
+   9               		.cfi_sections	.debug_frame
+  10               	.Letext0:
+  11               		.file 1 "/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/stdint.h"
+  12               		.file 2 "/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/lib/avr-gcc/9/gcc/avr/9.3.0/include/stddef.h"
+  13               		.file 3 "./tmk_core/protocol/lufa/LUFA-git/LUFA/Drivers/USB/Core/AVR8/../StdRequestType.h"
+  14               		.file 4 "./tmk_core/common/action.h"
+  15               		.file 5 "./tmk_core/protocol/lufa/LUFA-git/LUFA/Drivers/USB/Core/AVR8/../DeviceStandardReq.h"
+  16               		.file 6 "./tmk_core/protocol/lufa/LUFA-git/LUFA/Drivers/USB/Core/USBTask.h"
+  17               		.file 7 "./tmk_core/protocol/lufa/LUFA-git/LUFA/Drivers/USB/Core/HostStandardReq.h"
+  18               		.file 8 "/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/stdio.h"
+  19               		.file 9 "./tmk_core/common/report.h"
+  20               		.file 10 "./tmk_core/common/host.h"
+  21               		.file 11 "./tmk_core/common/debug.h"
+  22               		.file 12 "./quantum/keycode_config.h"
+  23               		.file 13 "./quantum/keymap.h"
+  24               		.file 14 "./quantum/light_ws2812.h"
+  25               		.file 15 "./quantum/rgblight.h"
+  26               		.file 16 "./tmk_core/common/action_layer.h"
+  27               		.file 17 "./tmk_core/common/timer.h"
+  28               		.file 18 "./tmk_core/common/action_util.h"
+  29               		.file 19 "/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/stdlib.h"
+  30               		.file 20 "./quantum/process_keycode/process_tap_dance.h"
+DEFINED SYMBOLS
+                            *ABS*:0000000000000000 kb.c
+/var/folders/0z/ym_gdwfd5tg7m49f_1nfh8300000gn/T//ccOC1dwR.s:2      *ABS*:000000000000003e __SP_H__
+/var/folders/0z/ym_gdwfd5tg7m49f_1nfh8300000gn/T//ccOC1dwR.s:3      *ABS*:000000000000003d __SP_L__
+/var/folders/0z/ym_gdwfd5tg7m49f_1nfh8300000gn/T//ccOC1dwR.s:4      *ABS*:000000000000003f __SREG__
+/var/folders/0z/ym_gdwfd5tg7m49f_1nfh8300000gn/T//ccOC1dwR.s:5      *ABS*:0000000000000000 __tmp_reg__
+/var/folders/0z/ym_gdwfd5tg7m49f_1nfh8300000gn/T//ccOC1dwR.s:6      *ABS*:0000000000000001 __zero_reg__
+
+NO UNDEFINED SYMBOLS

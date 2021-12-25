@@ -1,0 +1,1022 @@
+   1               		.file	"suspend.c"
+   2               	__SP_H__ = 0x3e
+   3               	__SP_L__ = 0x3d
+   4               	__SREG__ = 0x3f
+   5               	__tmp_reg__ = 0
+   6               	__zero_reg__ = 1
+   7               		.text
+   8               	.Ltext0:
+   9               		.cfi_sections	.debug_frame
+  10               		.section	.text.suspend_idle,"ax",@progbits
+  11               	.global	suspend_idle
+  13               	suspend_idle:
+  14               	.LVL0:
+  15               	.LFB108:
+  16               		.file 1 "./tmk_core/common/avr/suspend.c"
+   1:./tmk_core/common/avr/suspend.c **** #include <stdbool.h>
+   2:./tmk_core/common/avr/suspend.c **** #include <avr/sleep.h>
+   3:./tmk_core/common/avr/suspend.c **** #include <avr/wdt.h>
+   4:./tmk_core/common/avr/suspend.c **** #include <avr/interrupt.h>
+   5:./tmk_core/common/avr/suspend.c **** #include "matrix.h"
+   6:./tmk_core/common/avr/suspend.c **** #include "action.h"
+   7:./tmk_core/common/avr/suspend.c **** #include "backlight.h"
+   8:./tmk_core/common/avr/suspend.c **** #include "suspend_avr.h"
+   9:./tmk_core/common/avr/suspend.c **** #include "suspend.h"
+  10:./tmk_core/common/avr/suspend.c **** #include "timer.h"
+  11:./tmk_core/common/avr/suspend.c **** #include "led.h"
+  12:./tmk_core/common/avr/suspend.c **** 
+  13:./tmk_core/common/avr/suspend.c **** #ifdef PROTOCOL_LUFA
+  14:./tmk_core/common/avr/suspend.c **** 	#include "lufa.h"
+  15:./tmk_core/common/avr/suspend.c **** #endif
+  16:./tmk_core/common/avr/suspend.c **** 
+  17:./tmk_core/common/avr/suspend.c **** #ifdef AUDIO_ENABLE
+  18:./tmk_core/common/avr/suspend.c ****     #include "audio.h"
+  19:./tmk_core/common/avr/suspend.c **** #endif /* AUDIO_ENABLE */
+  20:./tmk_core/common/avr/suspend.c **** 
+  21:./tmk_core/common/avr/suspend.c **** 
+  22:./tmk_core/common/avr/suspend.c **** 
+  23:./tmk_core/common/avr/suspend.c **** #define wdt_intr_enable(value)   \
+  24:./tmk_core/common/avr/suspend.c **** __asm__ __volatile__ (  \
+  25:./tmk_core/common/avr/suspend.c ****     "in __tmp_reg__,__SREG__" "\n\t"    \
+  26:./tmk_core/common/avr/suspend.c ****     "cli" "\n\t"    \
+  27:./tmk_core/common/avr/suspend.c ****     "wdr" "\n\t"    \
+  28:./tmk_core/common/avr/suspend.c ****     "sts %0,%1" "\n\t"  \
+  29:./tmk_core/common/avr/suspend.c ****     "out __SREG__,__tmp_reg__" "\n\t"   \
+  30:./tmk_core/common/avr/suspend.c ****     "sts %0,%2" "\n\t" \
+  31:./tmk_core/common/avr/suspend.c ****     : /* no outputs */  \
+  32:./tmk_core/common/avr/suspend.c ****     : "M" (_SFR_MEM_ADDR(_WD_CONTROL_REG)), \
+  33:./tmk_core/common/avr/suspend.c ****     "r" (_BV(_WD_CHANGE_BIT) | _BV(WDE)), \
+  34:./tmk_core/common/avr/suspend.c ****     "r" ((uint8_t) ((value & 0x08 ? _WD_PS3_MASK : 0x00) | \
+  35:./tmk_core/common/avr/suspend.c ****         _BV(WDIE) | (value & 0x07)) ) \
+  36:./tmk_core/common/avr/suspend.c ****     : "r0"  \
+  37:./tmk_core/common/avr/suspend.c **** )
+  38:./tmk_core/common/avr/suspend.c **** 
+  39:./tmk_core/common/avr/suspend.c **** 
+  40:./tmk_core/common/avr/suspend.c **** void suspend_idle(uint8_t time)
+  41:./tmk_core/common/avr/suspend.c **** {
+  17               		.loc 1 41 1 view -0
+  18               		.cfi_startproc
+  19               	/* prologue: function */
+  20               	/* frame size = 0 */
+  21               	/* stack size = 0 */
+  22               	.L__stack_usage = 0
+  42:./tmk_core/common/avr/suspend.c ****     cli();
+  23               		.loc 1 42 5 view .LVU1
+  24               	/* #APP */
+  25               	 ;  42 "./tmk_core/common/avr/suspend.c" 1
+  26 0000 F894      		cli
+  27               	 ;  0 "" 2
+  43:./tmk_core/common/avr/suspend.c ****     set_sleep_mode(SLEEP_MODE_IDLE);
+  28               		.loc 1 43 5 view .LVU2
+  29               		.loc 1 43 5 view .LVU3
+  30               	/* #NOAPP */
+  31 0002 83B7      		in r24,0x33
+  32               	.LVL1:
+  33               		.loc 1 43 5 is_stmt 0 view .LVU4
+  34 0004 817F      		andi r24,lo8(-15)
+  35 0006 83BF      		out 0x33,r24
+  36               		.loc 1 43 5 is_stmt 1 view .LVU5
+  44:./tmk_core/common/avr/suspend.c ****     sleep_enable();
+  37               		.loc 1 44 5 view .LVU6
+  38               		.loc 1 44 5 view .LVU7
+  39 0008 83B7      		in r24,0x33
+  40 000a 8160      		ori r24,lo8(1)
+  41 000c 83BF      		out 0x33,r24
+  42               		.loc 1 44 5 view .LVU8
+  45:./tmk_core/common/avr/suspend.c ****     sei();
+  43               		.loc 1 45 5 view .LVU9
+  44               	/* #APP */
+  45               	 ;  45 "./tmk_core/common/avr/suspend.c" 1
+  46 000e 7894      		sei
+  47               	 ;  0 "" 2
+  46:./tmk_core/common/avr/suspend.c ****     sleep_cpu();
+  48               		.loc 1 46 5 view .LVU10
+  49               		.loc 1 46 5 view .LVU11
+  50               	 ;  46 "./tmk_core/common/avr/suspend.c" 1
+  51 0010 8895      		sleep
+  52               		
+  53               	 ;  0 "" 2
+  54               		.loc 1 46 5 view .LVU12
+  47:./tmk_core/common/avr/suspend.c ****     sleep_disable();
+  55               		.loc 1 47 5 view .LVU13
+  56               		.loc 1 47 5 view .LVU14
+  57               	/* #NOAPP */
+  58 0012 83B7      		in r24,0x33
+  59 0014 8E7F      		andi r24,lo8(-2)
+  60 0016 83BF      		out 0x33,r24
+  61               		.loc 1 47 5 view .LVU15
+  62               	/* epilogue start */
+  48:./tmk_core/common/avr/suspend.c **** }
+  63               		.loc 1 48 1 is_stmt 0 view .LVU16
+  64 0018 0895      		ret
+  65               		.cfi_endproc
+  66               	.LFE108:
+  68               		.section	.text.suspend_power_down,"ax",@progbits
+  69               	.global	suspend_power_down
+  71               	suspend_power_down:
+  72               	.LFB110:
+  49:./tmk_core/common/avr/suspend.c **** 
+  50:./tmk_core/common/avr/suspend.c **** #ifndef NO_SUSPEND_POWER_DOWN
+  51:./tmk_core/common/avr/suspend.c **** /* Power down MCU with watchdog timer
+  52:./tmk_core/common/avr/suspend.c ****  * wdto: watchdog timer timeout defined in <avr/wdt.h>
+  53:./tmk_core/common/avr/suspend.c ****  *          WDTO_15MS
+  54:./tmk_core/common/avr/suspend.c ****  *          WDTO_30MS
+  55:./tmk_core/common/avr/suspend.c ****  *          WDTO_60MS
+  56:./tmk_core/common/avr/suspend.c ****  *          WDTO_120MS
+  57:./tmk_core/common/avr/suspend.c ****  *          WDTO_250MS
+  58:./tmk_core/common/avr/suspend.c ****  *          WDTO_500MS
+  59:./tmk_core/common/avr/suspend.c ****  *          WDTO_1S
+  60:./tmk_core/common/avr/suspend.c ****  *          WDTO_2S
+  61:./tmk_core/common/avr/suspend.c ****  *          WDTO_4S
+  62:./tmk_core/common/avr/suspend.c ****  *          WDTO_8S
+  63:./tmk_core/common/avr/suspend.c ****  */
+  64:./tmk_core/common/avr/suspend.c **** static uint8_t wdt_timeout = 0;
+  65:./tmk_core/common/avr/suspend.c **** 
+  66:./tmk_core/common/avr/suspend.c **** static void power_down(uint8_t wdto)
+  67:./tmk_core/common/avr/suspend.c **** {
+  68:./tmk_core/common/avr/suspend.c **** #ifdef PROTOCOL_LUFA
+  69:./tmk_core/common/avr/suspend.c ****     if (USB_DeviceState == DEVICE_STATE_Configured) return;
+  70:./tmk_core/common/avr/suspend.c **** #endif
+  71:./tmk_core/common/avr/suspend.c ****     wdt_timeout = wdto;
+  72:./tmk_core/common/avr/suspend.c **** 
+  73:./tmk_core/common/avr/suspend.c ****     // Watchdog Interrupt Mode
+  74:./tmk_core/common/avr/suspend.c ****     wdt_intr_enable(wdto);
+  75:./tmk_core/common/avr/suspend.c **** 
+  76:./tmk_core/common/avr/suspend.c **** #ifdef BACKLIGHT_ENABLE
+  77:./tmk_core/common/avr/suspend.c **** 	backlight_set(0);
+  78:./tmk_core/common/avr/suspend.c **** #endif
+  79:./tmk_core/common/avr/suspend.c **** 
+  80:./tmk_core/common/avr/suspend.c **** 	// Turn off LED indicators
+  81:./tmk_core/common/avr/suspend.c **** 	led_set(0);
+  82:./tmk_core/common/avr/suspend.c **** 
+  83:./tmk_core/common/avr/suspend.c **** 	#ifdef AUDIO_ENABLE
+  84:./tmk_core/common/avr/suspend.c ****         // This sometimes disables the start-up noise, so it's been disabled
+  85:./tmk_core/common/avr/suspend.c **** 		// stop_all_notes();
+  86:./tmk_core/common/avr/suspend.c **** 	#endif /* AUDIO_ENABLE */
+  87:./tmk_core/common/avr/suspend.c **** 
+  88:./tmk_core/common/avr/suspend.c ****     // TODO: more power saving
+  89:./tmk_core/common/avr/suspend.c ****     // See PicoPower application note
+  90:./tmk_core/common/avr/suspend.c ****     // - I/O port input with pullup
+  91:./tmk_core/common/avr/suspend.c ****     // - prescale clock
+  92:./tmk_core/common/avr/suspend.c ****     // - BOD disable
+  93:./tmk_core/common/avr/suspend.c ****     // - Power Reduction Register PRR
+  94:./tmk_core/common/avr/suspend.c ****     set_sleep_mode(SLEEP_MODE_PWR_DOWN);
+  95:./tmk_core/common/avr/suspend.c ****     sleep_enable();
+  96:./tmk_core/common/avr/suspend.c ****     sei();
+  97:./tmk_core/common/avr/suspend.c ****     sleep_cpu();
+  98:./tmk_core/common/avr/suspend.c ****     sleep_disable();
+  99:./tmk_core/common/avr/suspend.c **** 
+ 100:./tmk_core/common/avr/suspend.c ****     // Disable watchdog after sleep
+ 101:./tmk_core/common/avr/suspend.c ****     wdt_disable();
+ 102:./tmk_core/common/avr/suspend.c **** }
+ 103:./tmk_core/common/avr/suspend.c **** #endif
+ 104:./tmk_core/common/avr/suspend.c **** 
+ 105:./tmk_core/common/avr/suspend.c **** void suspend_power_down(void)
+ 106:./tmk_core/common/avr/suspend.c **** {
+  73               		.loc 1 106 1 is_stmt 1 view -0
+  74               		.cfi_startproc
+  75               	/* prologue: function */
+  76               	/* frame size = 0 */
+  77               	/* stack size = 0 */
+  78               	.L__stack_usage = 0
+ 107:./tmk_core/common/avr/suspend.c **** #ifndef NO_SUSPEND_POWER_DOWN
+ 108:./tmk_core/common/avr/suspend.c ****     power_down(WDTO_15MS);
+  79               		.loc 1 108 5 view .LVU18
+  80               	.LBB13:
+  81               	.LBI13:
+  66:./tmk_core/common/avr/suspend.c **** {
+  82               		.loc 1 66 13 view .LVU19
+  83               	.LVL2:
+  84               	.LBB14:
+  69:./tmk_core/common/avr/suspend.c **** #endif
+  85               		.loc 1 69 5 view .LVU20
+  69:./tmk_core/common/avr/suspend.c **** #endif
+  86               		.loc 1 69 25 is_stmt 0 view .LVU21
+  87 0000 8091 0000 		lds r24,USB_DeviceState
+  69:./tmk_core/common/avr/suspend.c **** #endif
+  88               		.loc 1 69 8 view .LVU22
+  89 0004 8430      		cpi r24,lo8(4)
+  90 0006 01F0      		breq .L2
+  71:./tmk_core/common/avr/suspend.c **** 
+  91               		.loc 1 71 5 is_stmt 1 view .LVU23
+  71:./tmk_core/common/avr/suspend.c **** 
+  92               		.loc 1 71 17 is_stmt 0 view .LVU24
+  93 0008 1092 0000 		sts wdt_timeout,__zero_reg__
+  74:./tmk_core/common/avr/suspend.c **** 
+  94               		.loc 1 74 5 is_stmt 1 view .LVU25
+  95 000c 88E1      		ldi r24,lo8(24)
+  96 000e 90E0      		ldi r25,0
+  97 0010 20E4      		ldi r18,lo8(64)
+  98               	/* #APP */
+  99               	 ;  74 "./tmk_core/common/avr/suspend.c" 1
+ 100 0012 0FB6      		in __tmp_reg__,__SREG__
+ 101 0014 F894      		cli
+ 102 0016 A895      		wdr
+ 103 0018 8093 6000 		sts 96,r24
+ 104 001c 0FBE      		out __SREG__,__tmp_reg__
+ 105 001e 2093 6000 		sts 96,r18
+ 106               		
+ 107               	 ;  0 "" 2
+  77:./tmk_core/common/avr/suspend.c **** #endif
+ 108               		.loc 1 77 2 view .LVU26
+ 109               	/* #NOAPP */
+ 110 0022 80E0      		ldi r24,0
+ 111 0024 0E94 0000 		call backlight_set
+ 112               	.LVL3:
+  81:./tmk_core/common/avr/suspend.c **** 
+ 113               		.loc 1 81 2 view .LVU27
+ 114 0028 80E0      		ldi r24,0
+ 115 002a 0E94 0000 		call led_set
+ 116               	.LVL4:
+  94:./tmk_core/common/avr/suspend.c ****     sleep_enable();
+ 117               		.loc 1 94 5 view .LVU28
+  94:./tmk_core/common/avr/suspend.c ****     sleep_enable();
+ 118               		.loc 1 94 5 view .LVU29
+ 119 002e 83B7      		in r24,0x33
+ 120 0030 817F      		andi r24,lo8(-15)
+ 121 0032 8460      		ori r24,lo8(4)
+ 122 0034 83BF      		out 0x33,r24
+  94:./tmk_core/common/avr/suspend.c ****     sleep_enable();
+ 123               		.loc 1 94 5 view .LVU30
+  95:./tmk_core/common/avr/suspend.c ****     sei();
+ 124               		.loc 1 95 5 view .LVU31
+  95:./tmk_core/common/avr/suspend.c ****     sei();
+ 125               		.loc 1 95 5 view .LVU32
+ 126 0036 83B7      		in r24,0x33
+ 127 0038 8160      		ori r24,lo8(1)
+ 128 003a 83BF      		out 0x33,r24
+  95:./tmk_core/common/avr/suspend.c ****     sei();
+ 129               		.loc 1 95 5 view .LVU33
+  96:./tmk_core/common/avr/suspend.c ****     sleep_cpu();
+ 130               		.loc 1 96 5 view .LVU34
+ 131               	/* #APP */
+ 132               	 ;  96 "./tmk_core/common/avr/suspend.c" 1
+ 133 003c 7894      		sei
+ 134               	 ;  0 "" 2
+  97:./tmk_core/common/avr/suspend.c ****     sleep_disable();
+ 135               		.loc 1 97 5 view .LVU35
+  97:./tmk_core/common/avr/suspend.c ****     sleep_disable();
+ 136               		.loc 1 97 5 view .LVU36
+ 137               	 ;  97 "./tmk_core/common/avr/suspend.c" 1
+ 138 003e 8895      		sleep
+ 139               		
+ 140               	 ;  0 "" 2
+  97:./tmk_core/common/avr/suspend.c ****     sleep_disable();
+ 141               		.loc 1 97 5 view .LVU37
+  98:./tmk_core/common/avr/suspend.c **** 
+ 142               		.loc 1 98 5 view .LVU38
+  98:./tmk_core/common/avr/suspend.c **** 
+ 143               		.loc 1 98 5 view .LVU39
+ 144               	/* #NOAPP */
+ 145 0040 83B7      		in r24,0x33
+ 146 0042 8E7F      		andi r24,lo8(-2)
+ 147 0044 83BF      		out 0x33,r24
+  98:./tmk_core/common/avr/suspend.c **** 
+ 148               		.loc 1 98 5 view .LVU40
+ 101:./tmk_core/common/avr/suspend.c **** }
+ 149               		.loc 1 101 5 view .LVU41
+ 150               	.LBB15:
+ 151               	.LBI15:
+ 152               		.file 2 "/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h"
+   1:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h **** /* Copyright (c) 2002, 2004 Marek Michalkiewicz
+   2:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h ****    Copyright (c) 2005, 2006, 2007 Eric B. Weddington
+   3:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h ****    All rights reserved.
+   4:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h **** 
+   5:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h ****    Redistribution and use in source and binary forms, with or without
+   6:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h ****    modification, are permitted provided that the following conditions are met:
+   7:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h **** 
+   8:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h ****    * Redistributions of source code must retain the above copyright
+   9:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h ****      notice, this list of conditions and the following disclaimer.
+  10:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h **** 
+  11:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h ****    * Redistributions in binary form must reproduce the above copyright
+  12:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h ****      notice, this list of conditions and the following disclaimer in
+  13:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h ****      the documentation and/or other materials provided with the
+  14:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h ****      distribution.
+  15:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h **** 
+  16:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h ****    * Neither the name of the copyright holders nor the names of
+  17:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h ****      contributors may be used to endorse or promote products derived
+  18:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h ****      from this software without specific prior written permission.
+  19:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h **** 
+  20:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h ****   THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+  21:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h ****   AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+  22:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h ****   IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+  23:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h ****   ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
+  24:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h ****   LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+  25:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h ****   CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+  26:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h ****   SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+  27:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h ****   INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+  28:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h ****   CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+  29:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h ****   ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+  30:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h ****   POSSIBILITY OF SUCH DAMAGE. */
+  31:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h **** 
+  32:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h **** /* $Id: wdt.h 2503 2016-02-07 22:59:47Z joerg_wunsch $ */
+  33:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h **** 
+  34:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h **** /*
+  35:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h ****    avr/wdt.h - macros for AVR watchdog timer
+  36:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h ****  */
+  37:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h **** 
+  38:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h **** #ifndef _AVR_WDT_H_
+  39:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h **** #define _AVR_WDT_H_
+  40:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h **** 
+  41:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h **** #include <avr/io.h>
+  42:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h **** #include <stdint.h>
+  43:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h **** 
+  44:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h **** /** \file */
+  45:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h **** /** \defgroup avr_watchdog <avr/wdt.h>: Watchdog timer handling
+  46:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h ****     \code #include <avr/wdt.h> \endcode
+  47:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h **** 
+  48:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h ****     This header file declares the interface to some inline macros
+  49:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h ****     handling the watchdog timer present in many AVR devices.  In order
+  50:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h ****     to prevent the watchdog timer configuration from being
+  51:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h ****     accidentally altered by a crashing application, a special timed
+  52:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h ****     sequence is required in order to change it.  The macros within
+  53:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h ****     this header file handle the required sequence automatically
+  54:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h ****     before changing any value.  Interrupts will be disabled during
+  55:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h ****     the manipulation.
+  56:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h **** 
+  57:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h ****     \note Depending on the fuse configuration of the particular
+  58:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h ****     device, further restrictions might apply, in particular it might
+  59:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h ****     be disallowed to turn off the watchdog timer.
+  60:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h **** 
+  61:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h ****     Note that for newer devices (ATmega88 and newer, effectively any
+  62:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h ****     AVR that has the option to also generate interrupts), the watchdog
+  63:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h ****     timer remains active even after a system reset (except a power-on
+  64:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h ****     condition), using the fastest prescaler value (approximately 15
+  65:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h ****     ms).  It is therefore required to turn off the watchdog early
+  66:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h ****     during program startup, the datasheet recommends a sequence like
+  67:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h ****     the following:
+  68:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h **** 
+  69:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h ****     \code
+  70:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h ****     #include <stdint.h>
+  71:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h ****     #include <avr/wdt.h>
+  72:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h **** 
+  73:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h ****     uint8_t mcusr_mirror __attribute__ ((section (".noinit")));
+  74:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h **** 
+  75:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h ****     void get_mcusr(void) \
+  76:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h ****       __attribute__((naked)) \
+  77:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h ****       __attribute__((section(".init3")));
+  78:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h ****     void get_mcusr(void)
+  79:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h ****     {
+  80:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h ****       mcusr_mirror = MCUSR;
+  81:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h ****       MCUSR = 0;
+  82:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h ****       wdt_disable();
+  83:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h ****     }
+  84:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h ****     \endcode
+  85:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h **** 
+  86:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h ****     Saving the value of MCUSR in \c mcusr_mirror is only needed if the
+  87:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h ****     application later wants to examine the reset source, but in particular, 
+  88:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h ****     clearing the watchdog reset flag before disabling the
+  89:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h ****     watchdog is required, according to the datasheet.
+  90:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h **** */
+  91:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h **** 
+  92:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h **** /**
+  93:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h ****    \ingroup avr_watchdog
+  94:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h ****    Reset the watchdog timer.  When the watchdog timer is enabled,
+  95:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h ****    a call to this instruction is required before the timer expires,
+  96:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h ****    otherwise a watchdog-initiated device reset will occur. 
+  97:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h **** */
+  98:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h **** 
+  99:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h **** #define wdt_reset() __asm__ __volatile__ ("wdr")
+ 100:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h **** 
+ 101:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h **** #ifndef __DOXYGEN__
+ 102:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h **** 
+ 103:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h **** #if defined(WDP3)
+ 104:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h **** # define _WD_PS3_MASK       _BV(WDP3)
+ 105:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h **** #else
+ 106:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h **** # define _WD_PS3_MASK       0x00
+ 107:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h **** #endif
+ 108:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h **** 
+ 109:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h **** #if defined(WDTCSR)
+ 110:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h **** #  define _WD_CONTROL_REG     WDTCSR
+ 111:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h **** #elif defined(WDTCR)
+ 112:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h **** #  define _WD_CONTROL_REG     WDTCR
+ 113:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h **** #else
+ 114:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h **** #  define _WD_CONTROL_REG     WDT
+ 115:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h **** #endif
+ 116:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h **** 
+ 117:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h **** #if defined(WDTOE)
+ 118:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h **** #define _WD_CHANGE_BIT      WDTOE
+ 119:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h **** #else
+ 120:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h **** #define _WD_CHANGE_BIT      WDCE
+ 121:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h **** #endif
+ 122:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h **** 
+ 123:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h **** #endif	/* !__DOXYGEN__ */
+ 124:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h **** 
+ 125:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h **** 
+ 126:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h **** /**
+ 127:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h ****    \ingroup avr_watchdog
+ 128:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h ****    Enable the watchdog timer, configuring it for expiry after
+ 129:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h ****    \c timeout (which is a combination of the \c WDP0 through
+ 130:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h ****    \c WDP2 bits to write into the \c WDTCR register; For those devices 
+ 131:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h ****    that have a \c WDTCSR register, it uses the combination of the \c WDP0 
+ 132:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h ****    through \c WDP3 bits).
+ 133:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h **** 
+ 134:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h ****    See also the symbolic constants \c WDTO_15MS et al.
+ 135:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h **** */
+ 136:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h **** 
+ 137:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h **** 
+ 138:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h **** #if defined(__AVR_XMEGA__)
+ 139:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h **** 
+ 140:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h **** /*
+ 141:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h ****    wdt_enable(timeout) for xmega devices
+ 142:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h **** ** write signature (CCP_IOREG_gc) that enables change of protected I/O
+ 143:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h ****    registers to the CCP register
+ 144:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h **** ** At the same time,
+ 145:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h ****    1) set WDT change enable (WDT_CEN_bm)
+ 146:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h ****    2) enable WDT (WDT_ENABLE_bm)
+ 147:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h ****    3) set timeout (timeout)
+ 148:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h **** ** Synchronization starts when ENABLE bit of WDT is set. So, wait till it
+ 149:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h ****    finishes (SYNCBUSY of STATUS register is automatically cleared after the
+ 150:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h ****    sync is finished).
+ 151:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h **** */
+ 152:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h **** #define wdt_enable(timeout) \
+ 153:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h **** do { \
+ 154:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h **** uint8_t temp; \
+ 155:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h **** __asm__ __volatile__ (         \
+ 156:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h ****     "in __tmp_reg__, %[rampd]"              "\n\t" \
+ 157:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h ****     "out %[rampd], __zero_reg__"            "\n\t" \
+ 158:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h ****     "out %[ccp_reg], %[ioreg_cen_mask]"     "\n\t" \
+ 159:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h ****     "sts %[wdt_reg], %[wdt_enable_timeout]" "\n\t" \
+ 160:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h ****     "1:lds %[tmp], %[wdt_status_reg]"       "\n\t" \
+ 161:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h ****     "sbrc %[tmp], %[wdt_syncbusy_bit]"      "\n\t" \
+ 162:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h ****     "rjmp 1b"                               "\n\t" \
+ 163:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h ****     "out %[rampd], __tmp_reg__"             "\n\t" \
+ 164:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h ****     : [tmp]                "=r" (temp) \
+ 165:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h ****     : [rampd]              "I" (_SFR_IO_ADDR(RAMPD)),      \
+ 166:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h ****       [ccp_reg]            "I" (_SFR_IO_ADDR(CCP)),        \
+ 167:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h ****       [ioreg_cen_mask]     "r" ((uint8_t)CCP_IOREG_gc),     \
+ 168:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h ****       [wdt_reg]            "n" (_SFR_MEM_ADDR(WDT_CTRL)),   \
+ 169:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h ****       [wdt_enable_timeout] "r" ((uint8_t)(WDT_CEN_bm | WDT_ENABLE_bm | timeout)), \
+ 170:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h ****       [wdt_status_reg]     "n" (_SFR_MEM_ADDR(WDT_STATUS)), \
+ 171:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h ****       [wdt_syncbusy_bit]   "I" (WDT_SYNCBUSY_bm)            \
+ 172:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h ****     : "r0" \
+ 173:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h **** ); \
+ 174:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h **** } while(0)
+ 175:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h **** 
+ 176:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h **** #define wdt_disable() \
+ 177:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h **** __asm__ __volatile__ (  \
+ 178:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h ****     "in __tmp_reg__, %[rampd]"          "\n\t" \
+ 179:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h ****     "out %[rampd], __zero_reg__"        "\n\t" \
+ 180:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h ****     "out %[ccp_reg], %[ioreg_cen_mask]" "\n\t" \
+ 181:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h ****     "sts %[wdt_reg], %[disable_mask]"   "\n\t" \
+ 182:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h ****     "out %[rampd], __tmp_reg__"         "\n\t" \
+ 183:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h ****     : \
+ 184:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h ****     : [rampd]             "I" (_SFR_IO_ADDR(RAMPD)),    \
+ 185:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h ****       [ccp_reg]           "I" (_SFR_IO_ADDR(CCP)),      \
+ 186:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h ****       [ioreg_cen_mask]    "r" ((uint8_t)CCP_IOREG_gc),   \
+ 187:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h ****       [wdt_reg]           "n" (_SFR_MEM_ADDR(WDT_CTRL)), \
+ 188:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h ****       [disable_mask]      "r" ((uint8_t)((~WDT_ENABLE_bm) | WDT_CEN_bm)) \
+ 189:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h ****     : "r0" \
+ 190:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h **** );
+ 191:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h **** 
+ 192:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h **** #elif defined(__AVR_TINY__)
+ 193:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h **** 
+ 194:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h **** #define wdt_enable(value) \
+ 195:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h **** __asm__ __volatile__ ( \
+ 196:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h ****     "in __tmp_reg__,__SREG__" "\n\t"  \
+ 197:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h ****     "cli" "\n\t"  \
+ 198:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h ****     "wdr" "\n\t"  \
+ 199:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h ****     "out %[CCPADDRESS],%[SIGNATURE]" "\n\t"  \
+ 200:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h ****     "out %[WDTREG],%[WDVALUE]" "\n\t"  \
+ 201:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h ****     "out __SREG__,__tmp_reg__" "\n\t"  \
+ 202:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h ****     : /* no outputs */  \
+ 203:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h ****     : [CCPADDRESS] "I" (_SFR_IO_ADDR(CCP)),  \
+ 204:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h ****       [SIGNATURE] "r" ((uint8_t)0xD8), \
+ 205:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h ****       [WDTREG] "I" (_SFR_IO_ADDR(_WD_CONTROL_REG)), \
+ 206:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h ****       [WDVALUE] "r" ((uint8_t)((value & 0x08 ? _WD_PS3_MASK : 0x00) \
+ 207:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h ****       | _BV(WDE) | (value & 0x07) )) \
+ 208:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h ****     : "r16" \
+ 209:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h **** )
+ 210:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h **** 
+ 211:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h **** #define wdt_disable() \
+ 212:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h **** do { \
+ 213:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h **** uint8_t temp_wd; \
+ 214:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h **** __asm__ __volatile__ ( \
+ 215:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h ****     "in __tmp_reg__,__SREG__" "\n\t"  \
+ 216:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h ****     "cli" "\n\t"  \
+ 217:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h ****     "wdr" "\n\t"  \
+ 218:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h ****     "out %[CCPADDRESS],%[SIGNATURE]" "\n\t"  \
+ 219:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h ****     "in  %[TEMP_WD],%[WDTREG]" "\n\t" \
+ 220:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h ****     "cbr %[TEMP_WD],%[WDVALUE]" "\n\t" \
+ 221:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h ****     "out %[WDTREG],%[TEMP_WD]" "\n\t" \
+ 222:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h ****     "out __SREG__,__tmp_reg__" "\n\t" \
+ 223:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h ****     : /*no output */ \
+ 224:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h ****     : [CCPADDRESS] "I" (_SFR_IO_ADDR(CCP)), \
+ 225:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h ****       [SIGNATURE] "r" ((uint8_t)0xD8), \
+ 226:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h ****       [WDTREG] "I" (_SFR_IO_ADDR(_WD_CONTROL_REG)), \
+ 227:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h ****       [TEMP_WD] "d" (temp_wd), \
+ 228:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h ****       [WDVALUE] "n" (1 << WDE) \
+ 229:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h ****     : "r16" \
+ 230:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h **** ); \
+ 231:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h **** }while(0)
+ 232:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h **** 
+ 233:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h **** #elif defined(CCP)
+ 234:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h **** 
+ 235:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h **** static __inline__
+ 236:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h **** __attribute__ ((__always_inline__))
+ 237:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h **** void wdt_enable (const uint8_t value)
+ 238:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h **** {
+ 239:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h **** 	if (!_SFR_IO_REG_P (CCP) && !_SFR_IO_REG_P (_WD_CONTROL_REG))
+ 240:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h **** 	{
+ 241:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h **** 		__asm__ __volatile__ (
+ 242:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h **** 			"in __tmp_reg__,__SREG__" "\n\t"
+ 243:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h **** 			"cli" "\n\t"
+ 244:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h **** 			"wdr" "\n\t"
+ 245:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h **** 			"sts %[CCPADDRESS],%[SIGNATURE]" "\n\t"
+ 246:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h **** 			"sts %[WDTREG],%[WDVALUE]" "\n\t"
+ 247:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h **** 			"out __SREG__,__tmp_reg__" "\n\t"
+ 248:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h **** 			: /* no outputs */
+ 249:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h **** 			: [CCPADDRESS] "n" (_SFR_MEM_ADDR(CCP)),
+ 250:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h **** 			[SIGNATURE] "r" ((uint8_t)0xD8),
+ 251:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h **** 			[WDTREG] "n" (_SFR_MEM_ADDR(_WD_CONTROL_REG)),
+ 252:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h **** 			[WDVALUE] "r" ((uint8_t)((value & 0x08 ? _WD_PS3_MASK : 0x00)
+ 253:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h **** 				| _BV(WDE) | (value & 0x07) ))
+ 254:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h **** 			: "r0"
+ 255:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h **** 			);
+ 256:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h **** 	}
+ 257:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h **** 	else if (!_SFR_IO_REG_P (CCP) && _SFR_IO_REG_P (_WD_CONTROL_REG))
+ 258:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h **** 	{
+ 259:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h **** 		__asm__ __volatile__ (
+ 260:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h **** 			"in __tmp_reg__,__SREG__" "\n\t"
+ 261:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h **** 			"cli" "\n\t"
+ 262:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h **** 			"wdr" "\n\t"
+ 263:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h **** 			"sts %[CCPADDRESS],%[SIGNATURE]" "\n\t"
+ 264:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h **** 			"out %[WDTREG],%[WDVALUE]" "\n\t"
+ 265:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h **** 			"out __SREG__,__tmp_reg__" "\n\t"
+ 266:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h **** 			: /* no outputs */
+ 267:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h **** 			: [CCPADDRESS] "n" (_SFR_MEM_ADDR(CCP)),
+ 268:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h **** 			[SIGNATURE] "r" ((uint8_t)0xD8),
+ 269:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h **** 			[WDTREG] "I" (_SFR_IO_ADDR(_WD_CONTROL_REG)),
+ 270:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h **** 			[WDVALUE] "r" ((uint8_t)((value & 0x08 ? _WD_PS3_MASK : 0x00)
+ 271:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h **** 				| _BV(WDE) | (value & 0x07) ))
+ 272:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h **** 			: "r0"
+ 273:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h **** 			);
+ 274:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h **** 	}
+ 275:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h **** 	else if (_SFR_IO_REG_P (CCP) && !_SFR_IO_REG_P (_WD_CONTROL_REG))
+ 276:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h **** 	{
+ 277:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h **** 		__asm__ __volatile__ (
+ 278:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h **** 			"in __tmp_reg__,__SREG__" "\n\t"
+ 279:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h **** 			"cli" "\n\t"
+ 280:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h **** 			"wdr" "\n\t"
+ 281:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h **** 			"out %[CCPADDRESS],%[SIGNATURE]" "\n\t"
+ 282:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h **** 			"sts %[WDTREG],%[WDVALUE]" "\n\t"
+ 283:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h **** 			"out __SREG__,__tmp_reg__" "\n\t"
+ 284:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h **** 			: /* no outputs */
+ 285:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h **** 			: [CCPADDRESS] "I" (_SFR_IO_ADDR(CCP)),
+ 286:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h **** 			[SIGNATURE] "r" ((uint8_t)0xD8),
+ 287:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h **** 			[WDTREG] "n" (_SFR_MEM_ADDR(_WD_CONTROL_REG)),
+ 288:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h **** 			[WDVALUE] "r" ((uint8_t)((value & 0x08 ? _WD_PS3_MASK : 0x00)
+ 289:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h **** 				| _BV(WDE) | (value & 0x07) ))
+ 290:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h **** 			: "r0"
+ 291:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h **** 			);
+ 292:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h **** 	}
+ 293:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h **** 	else
+ 294:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h ****  	{
+ 295:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h **** 		__asm__ __volatile__ (
+ 296:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h **** 			"in __tmp_reg__,__SREG__" "\n\t"
+ 297:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h **** 			"cli" "\n\t"
+ 298:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h **** 			"wdr" "\n\t"
+ 299:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h **** 			"out %[CCPADDRESS],%[SIGNATURE]" "\n\t"
+ 300:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h **** 			"out %[WDTREG],%[WDVALUE]" "\n\t"
+ 301:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h **** 			"out __SREG__,__tmp_reg__" "\n\t"
+ 302:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h **** 			: /* no outputs */
+ 303:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h **** 			: [CCPADDRESS] "I" (_SFR_IO_ADDR(CCP)),
+ 304:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h **** 			[SIGNATURE] "r" ((uint8_t)0xD8),
+ 305:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h **** 			[WDTREG] "I" (_SFR_IO_ADDR(_WD_CONTROL_REG)),
+ 306:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h **** 			[WDVALUE] "r" ((uint8_t)((value & 0x08 ? _WD_PS3_MASK : 0x00)
+ 307:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h **** 				| _BV(WDE) | (value & 0x07) ))
+ 308:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h **** 			: "r0"
+ 309:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h **** 			);
+ 310:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h **** 	}
+ 311:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h **** }
+ 312:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h **** 
+ 313:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h **** static __inline__
+ 314:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h **** __attribute__ ((__always_inline__))
+ 315:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h **** void wdt_disable (void)
+ 316:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h **** {
+ 317:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h **** 	if (!_SFR_IO_REG_P (CCP) && !_SFR_IO_REG_P(_WD_CONTROL_REG))
+ 318:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h **** 	{
+ 319:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h ****         uint8_t temp_wd;
+ 320:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h ****         __asm__ __volatile__ (
+ 321:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h **** 				"in __tmp_reg__,__SREG__" "\n\t"
+ 322:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h **** 				"cli" "\n\t"
+ 323:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h **** 				"wdr" "\n\t"
+ 324:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h **** 				"sts %[CCPADDRESS],%[SIGNATURE]" "\n\t"
+ 325:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h **** 				"lds %[TEMP_WD],%[WDTREG]" "\n\t"
+ 326:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h **** 				"cbr %[TEMP_WD],%[WDVALUE]" "\n\t"
+ 327:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h **** 				"sts %[WDTREG],%[TEMP_WD]" "\n\t"
+ 328:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h **** 				"out __SREG__,__tmp_reg__" "\n\t"
+ 329:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h **** 				: /*no output */
+ 330:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h **** 				: [CCPADDRESS] "n" (_SFR_MEM_ADDR(CCP)),
+ 331:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h **** 				[SIGNATURE] "r" ((uint8_t)0xD8),
+ 332:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h **** 				[WDTREG] "n" (_SFR_MEM_ADDR(_WD_CONTROL_REG)),
+ 333:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h **** 				[TEMP_WD] "d" (temp_wd),
+ 334:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h **** 				[WDVALUE] "n" (1 << WDE)
+ 335:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h **** 				: "r0"
+ 336:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h **** 				);
+ 337:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h **** 	}
+ 338:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h **** 	else if (!_SFR_IO_REG_P (CCP) && _SFR_IO_REG_P(_WD_CONTROL_REG))
+ 339:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h **** 	{
+ 340:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h ****         uint8_t temp_wd;
+ 341:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h ****         __asm__ __volatile__ (
+ 342:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h **** 				"in __tmp_reg__,__SREG__" "\n\t"
+ 343:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h **** 				"cli" "\n\t"
+ 344:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h **** 				"wdr" "\n\t"
+ 345:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h **** 				"sts %[CCPADDRESS],%[SIGNATURE]" "\n\t"
+ 346:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h **** 				"in %[TEMP_WD],%[WDTREG]" "\n\t"
+ 347:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h **** 				"cbr %[TEMP_WD],%[WDVALUE]" "\n\t"
+ 348:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h **** 				"out %[WDTREG],%[TEMP_WD]" "\n\t"
+ 349:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h **** 				"out __SREG__,__tmp_reg__" "\n\t"
+ 350:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h **** 				: /*no output */
+ 351:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h **** 				: [CCPADDRESS] "n" (_SFR_MEM_ADDR(CCP)),
+ 352:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h **** 				[SIGNATURE] "r" ((uint8_t)0xD8),
+ 353:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h **** 				[WDTREG] "I" (_SFR_IO_ADDR(_WD_CONTROL_REG)),
+ 354:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h **** 				[TEMP_WD] "d" (temp_wd),
+ 355:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h **** 				[WDVALUE] "n" (1 << WDE)
+ 356:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h **** 				: "r0"
+ 357:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h **** 				);
+ 358:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h **** 	}
+ 359:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h **** 	else if (_SFR_IO_REG_P (CCP) && !_SFR_IO_REG_P(_WD_CONTROL_REG))
+ 360:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h **** 	{
+ 361:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h ****         uint8_t temp_wd;
+ 362:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h ****         __asm__ __volatile__ (
+ 363:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h **** 				"in __tmp_reg__,__SREG__" "\n\t"
+ 364:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h **** 				"cli" "\n\t"
+ 365:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h **** 				"wdr" "\n\t"
+ 366:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h **** 				"out %[CCPADDRESS],%[SIGNATURE]" "\n\t"
+ 367:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h **** 				"lds %[TEMP_WD],%[WDTREG]" "\n\t"
+ 368:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h **** 				"cbr %[TEMP_WD],%[WDVALUE]" "\n\t"
+ 369:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h **** 				"sts %[WDTREG],%[TEMP_WD]" "\n\t"
+ 370:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h **** 				"out __SREG__,__tmp_reg__" "\n\t"
+ 371:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h **** 				: /*no output */
+ 372:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h **** 				: [CCPADDRESS] "I" (_SFR_IO_ADDR(CCP)),
+ 373:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h **** 				[SIGNATURE] "r" ((uint8_t)0xD8),
+ 374:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h **** 				[WDTREG] "n" (_SFR_MEM_ADDR(_WD_CONTROL_REG)),
+ 375:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h **** 				[TEMP_WD] "d" (temp_wd),
+ 376:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h **** 				[WDVALUE] "n" (1 << WDE)
+ 377:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h **** 				: "r0"
+ 378:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h **** 				);
+ 379:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h **** 	}
+ 380:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h **** 	else
+ 381:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h **** 	{
+ 382:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h ****         uint8_t temp_wd;
+ 383:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h ****         __asm__ __volatile__ (
+ 384:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h **** 				"in __tmp_reg__,__SREG__" "\n\t"
+ 385:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h **** 				"cli" "\n\t"
+ 386:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h **** 				"wdr" "\n\t"
+ 387:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h **** 				"out %[CCPADDRESS],%[SIGNATURE]" "\n\t"
+ 388:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h **** 				"in %[TEMP_WD],%[WDTREG]" "\n\t"
+ 389:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h **** 				"cbr %[TEMP_WD],%[WDVALUE]" "\n\t"
+ 390:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h **** 				"out %[WDTREG],%[TEMP_WD]" "\n\t"
+ 391:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h **** 				"out __SREG__,__tmp_reg__" "\n\t"
+ 392:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h **** 				: /*no output */
+ 393:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h **** 				: [CCPADDRESS] "I" (_SFR_IO_ADDR(CCP)),
+ 394:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h **** 				[SIGNATURE] "r" ((uint8_t)0xD8),
+ 395:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h **** 				[WDTREG] "I" (_SFR_IO_ADDR(_WD_CONTROL_REG)),
+ 396:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h **** 				[TEMP_WD] "d" (temp_wd),
+ 397:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h **** 				[WDVALUE] "n" (1 << WDE)
+ 398:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h **** 				: "r0"
+ 399:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h **** 				);
+ 400:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h **** 	}
+ 401:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h **** }
+ 402:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h **** 
+ 403:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h **** #else
+ 404:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h **** 
+ 405:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h **** static __inline__
+ 406:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h **** __attribute__ ((__always_inline__))
+ 407:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h **** void wdt_enable (const uint8_t value)
+ 408:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h **** {
+ 409:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h **** 	if (_SFR_IO_REG_P (_WD_CONTROL_REG))
+ 410:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h **** 	{
+ 411:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h **** 		__asm__ __volatile__ (
+ 412:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h **** 				"in __tmp_reg__,__SREG__" "\n\t"
+ 413:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h **** 				"cli" "\n\t"
+ 414:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h **** 				"wdr" "\n\t"
+ 415:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h **** 				"out %0, %1" "\n\t"
+ 416:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h **** 				"out __SREG__,__tmp_reg__" "\n\t"
+ 417:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h **** 				"out %0, %2" "\n \t"
+ 418:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h **** 				: /* no outputs */
+ 419:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h **** 				: "I" (_SFR_IO_ADDR(_WD_CONTROL_REG)),
+ 420:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h **** 				"r" ((uint8_t)(_BV(_WD_CHANGE_BIT) | _BV(WDE))),
+ 421:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h **** 				"r" ((uint8_t) ((value & 0x08 ? _WD_PS3_MASK : 0x00) |
+ 422:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h **** 						_BV(WDE) | (value & 0x07)) )
+ 423:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h **** 				: "r0"
+ 424:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h **** 		);
+ 425:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h **** 	}
+ 426:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h **** 	else
+ 427:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h **** 	{
+ 428:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h **** 		__asm__ __volatile__ (
+ 429:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h **** 				"in __tmp_reg__,__SREG__" "\n\t"
+ 430:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h **** 				"cli" "\n\t"
+ 431:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h **** 				"wdr" "\n\t"
+ 432:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h **** 				"sts %0, %1" "\n\t"
+ 433:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h **** 				"out __SREG__,__tmp_reg__" "\n\t"
+ 434:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h **** 				"sts %0, %2" "\n \t"
+ 435:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h **** 				: /* no outputs */
+ 436:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h **** 				: "n" (_SFR_MEM_ADDR(_WD_CONTROL_REG)),
+ 437:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h **** 				"r" ((uint8_t)(_BV(_WD_CHANGE_BIT) | _BV(WDE))),
+ 438:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h **** 				"r" ((uint8_t) ((value & 0x08 ? _WD_PS3_MASK : 0x00) |
+ 439:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h **** 						_BV(WDE) | (value & 0x07)) )
+ 440:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h **** 				: "r0"
+ 441:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h **** 		);
+ 442:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h **** 	}
+ 443:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h **** }
+ 444:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h **** 
+ 445:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h **** static __inline__
+ 446:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h **** __attribute__ ((__always_inline__))
+ 447:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h **** void wdt_disable (void)
+ 153               		.loc 2 447 6 view .LVU42
+ 154               	.LBB16:
+ 448:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h **** {
+ 449:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h **** 	if (_SFR_IO_REG_P (_WD_CONTROL_REG))
+ 155               		.loc 2 449 2 view .LVU43
+ 156               	.LBB17:
+ 450:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h **** 	{
+ 451:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h ****         uint8_t register temp_reg;
+ 452:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h **** 		__asm__ __volatile__ (
+ 453:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h **** 				"in __tmp_reg__,__SREG__"    "\n\t"
+ 454:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h **** 				"cli"                        "\n\t"
+ 455:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h **** 				"wdr"                        "\n\t"
+ 456:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h **** 				"in  %[TEMPREG],%[WDTREG]"   "\n\t"
+ 457:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h **** 				"ori %[TEMPREG],%[WDCE_WDE]" "\n\t"
+ 458:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h **** 				"out %[WDTREG],%[TEMPREG]"   "\n\t"
+ 459:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h **** 				"out %[WDTREG],__zero_reg__" "\n\t"
+ 460:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h **** 				"out __SREG__,__tmp_reg__"   "\n\t"
+ 461:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h **** 				: [TEMPREG] "=d" (temp_reg)
+ 462:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h **** 				: [WDTREG]  "I"  (_SFR_IO_ADDR(_WD_CONTROL_REG)),
+ 463:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h **** 				[WDCE_WDE]  "n"  ((uint8_t)(_BV(_WD_CHANGE_BIT) | _BV(WDE)))
+ 464:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h **** 				: "r0"
+ 465:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h **** 		);
+ 466:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h **** 	}
+ 467:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h **** 	else
+ 468:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h **** 	{
+ 469:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h ****         uint8_t register temp_reg;
+ 157               		.loc 2 469 9 view .LVU44
+ 470:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h **** 		__asm__ __volatile__ (
+ 158               		.loc 2 470 3 view .LVU45
+ 159               	/* #APP */
+ 160               	 ;  470 "/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/avr/wdt.h" 1
+ 161 0046 0FB6      		in __tmp_reg__,__SREG__
+ 162 0048 F894      		cli
+ 163 004a A895      		wdr
+ 164 004c 8091 6000 		lds r24,96
+ 165 0050 8861      		ori r24,24
+ 166 0052 8093 6000 		sts 96,r24
+ 167 0056 1092 6000 		sts 96,__zero_reg__
+ 168 005a 0FBE      		out __SREG__,__tmp_reg__
+ 169               		
+ 170               	 ;  0 "" 2
+ 171               	.LVL5:
+ 172               	/* #NOAPP */
+ 173               	.L2:
+ 174               	/* epilogue start */
+ 175               		.loc 2 470 3 is_stmt 0 view .LVU46
+ 176               	.LBE17:
+ 177               	.LBE16:
+ 178               	.LBE15:
+ 179               	.LBE14:
+ 180               	.LBE13:
+ 109:./tmk_core/common/avr/suspend.c **** #endif
+ 110:./tmk_core/common/avr/suspend.c **** }
+ 181               		.loc 1 110 1 view .LVU47
+ 182 005c 0895      		ret
+ 183               		.cfi_endproc
+ 184               	.LFE110:
+ 186               		.section	.text.matrix_power_up,"ax",@progbits
+ 187               		.weak	matrix_power_up
+ 189               	matrix_power_up:
+ 190               	.LFB111:
+ 111:./tmk_core/common/avr/suspend.c **** 
+ 112:./tmk_core/common/avr/suspend.c **** __attribute__ ((weak)) void matrix_power_up(void) {}
+ 191               		.loc 1 112 51 is_stmt 1 view -0
+ 192               		.cfi_startproc
+ 193               	/* prologue: function */
+ 194               	/* frame size = 0 */
+ 195               	/* stack size = 0 */
+ 196               	.L__stack_usage = 0
+ 197               		.loc 1 112 52 view .LVU49
+ 198               	/* epilogue start */
+ 199               		.loc 1 112 1 is_stmt 0 view .LVU50
+ 200 0000 0895      		ret
+ 201               		.cfi_endproc
+ 202               	.LFE111:
+ 204               		.set	matrix_power_up.localalias,matrix_power_up
+ 205               		.section	.text.matrix_power_down,"ax",@progbits
+ 206               		.weak	matrix_power_down
+ 208               	matrix_power_down:
+ 209               	.LFB117:
+ 210               		.cfi_startproc
+ 211               	/* prologue: function */
+ 212               	/* frame size = 0 */
+ 213               	/* stack size = 0 */
+ 214               	.L__stack_usage = 0
+ 215               	/* epilogue start */
+ 216 0000 0895      		ret
+ 217               		.cfi_endproc
+ 218               	.LFE117:
+ 220               		.section	.text.suspend_wakeup_condition,"ax",@progbits
+ 221               	.global	suspend_wakeup_condition
+ 223               	suspend_wakeup_condition:
+ 224               	.LFB113:
+ 113:./tmk_core/common/avr/suspend.c **** __attribute__ ((weak)) void matrix_power_down(void) {}
+ 114:./tmk_core/common/avr/suspend.c **** bool suspend_wakeup_condition(void)
+ 115:./tmk_core/common/avr/suspend.c **** {
+ 225               		.loc 1 115 1 is_stmt 1 view -0
+ 226               		.cfi_startproc
+ 227               	/* prologue: function */
+ 228               	/* frame size = 0 */
+ 229               	/* stack size = 0 */
+ 230               	.L__stack_usage = 0
+ 116:./tmk_core/common/avr/suspend.c ****     matrix_power_up();
+ 231               		.loc 1 116 5 view .LVU52
+ 232 0000 0E94 0000 		call matrix_power_up
+ 233               	.LVL6:
+ 117:./tmk_core/common/avr/suspend.c ****     matrix_scan();
+ 234               		.loc 1 117 5 view .LVU53
+ 235 0004 0E94 0000 		call matrix_scan
+ 236               	.LVL7:
+ 118:./tmk_core/common/avr/suspend.c ****     matrix_power_down();
+ 237               		.loc 1 118 5 view .LVU54
+ 238 0008 0E94 0000 		call matrix_power_down
+ 239               	.LVL8:
+ 119:./tmk_core/common/avr/suspend.c ****     for (uint8_t r = 0; r < MATRIX_ROWS; r++) {
+ 240               		.loc 1 119 5 view .LVU55
+ 241               	.LBB18:
+ 242               		.loc 1 119 10 view .LVU56
+ 243               		.loc 1 119 25 view .LVU57
+ 120:./tmk_core/common/avr/suspend.c ****         if (matrix_get_row(r)) return true;
+ 244               		.loc 1 120 9 view .LVU58
+ 245               		.loc 1 120 13 is_stmt 0 view .LVU59
+ 246 000c 80E0      		ldi r24,0
+ 247 000e 0E94 0000 		call matrix_get_row
+ 248               	.LVL9:
+ 249 0012 982F      		mov r25,r24
+ 250               		.loc 1 120 12 view .LVU60
+ 251 0014 81E0      		ldi r24,lo8(1)
+ 252 0016 9111      		cpse r25,__zero_reg__
+ 253 0018 00C0      		rjmp .L10
+ 254 001a 80E0      		ldi r24,0
+ 255               	.L10:
+ 256               	/* epilogue start */
+ 257               	.LBE18:
+ 121:./tmk_core/common/avr/suspend.c ****     }
+ 122:./tmk_core/common/avr/suspend.c ****      return false;
+ 123:./tmk_core/common/avr/suspend.c **** }
+ 258               		.loc 1 123 1 view .LVU61
+ 259 001c 0895      		ret
+ 260               		.cfi_endproc
+ 261               	.LFE113:
+ 263               		.section	.text.suspend_wakeup_init,"ax",@progbits
+ 264               	.global	suspend_wakeup_init
+ 266               	suspend_wakeup_init:
+ 267               	.LFB114:
+ 124:./tmk_core/common/avr/suspend.c **** 
+ 125:./tmk_core/common/avr/suspend.c **** // run immediately after wakeup
+ 126:./tmk_core/common/avr/suspend.c **** void suspend_wakeup_init(void)
+ 127:./tmk_core/common/avr/suspend.c **** {
+ 268               		.loc 1 127 1 is_stmt 1 view -0
+ 269               		.cfi_startproc
+ 270               	/* prologue: function */
+ 271               	/* frame size = 0 */
+ 272               	/* stack size = 0 */
+ 273               	.L__stack_usage = 0
+ 128:./tmk_core/common/avr/suspend.c ****     // clear keyboard state
+ 129:./tmk_core/common/avr/suspend.c ****     clear_keyboard();
+ 274               		.loc 1 129 5 view .LVU63
+ 275 0000 0E94 0000 		call clear_keyboard
+ 276               	.LVL10:
+ 130:./tmk_core/common/avr/suspend.c **** #ifdef BACKLIGHT_ENABLE
+ 131:./tmk_core/common/avr/suspend.c ****     backlight_init();
+ 277               		.loc 1 131 5 view .LVU64
+ 278 0004 0E94 0000 		call backlight_init
+ 279               	.LVL11:
+ 132:./tmk_core/common/avr/suspend.c **** #endif
+ 133:./tmk_core/common/avr/suspend.c **** 	led_set(host_keyboard_leds());
+ 280               		.loc 1 133 2 view .LVU65
+ 281 0008 0E94 0000 		call host_keyboard_leds
+ 282               	.LVL12:
+ 283 000c 0C94 0000 		jmp led_set
+ 284               	.LVL13:
+ 285               		.cfi_endproc
+ 286               	.LFE114:
+ 288               		.section	.text.__vector_12,"ax",@progbits
+ 289               	.global	__vector_12
+ 291               	__vector_12:
+ 292               	.LFB115:
+ 134:./tmk_core/common/avr/suspend.c **** }
+ 135:./tmk_core/common/avr/suspend.c **** 
+ 136:./tmk_core/common/avr/suspend.c **** #ifndef NO_SUSPEND_POWER_DOWN
+ 137:./tmk_core/common/avr/suspend.c **** /* watchdog timeout */
+ 138:./tmk_core/common/avr/suspend.c **** ISR(WDT_vect)
+ 139:./tmk_core/common/avr/suspend.c **** {
+ 293               		.loc 1 139 1 view -0
+ 294               		.cfi_startproc
+ 295 0000 1F92 1FB6 		__gcc_isr 1
+ 295      1F92 1124 
+ 295      8F93 
+ 296 000a 9F93      		push r25
+ 297               	.LCFI0:
+ 298               		.cfi_def_cfa_offset 3
+ 299               		.cfi_offset 25, -2
+ 300 000c AF93      		push r26
+ 301               	.LCFI1:
+ 302               		.cfi_def_cfa_offset 4
+ 303               		.cfi_offset 26, -3
+ 304 000e BF93      		push r27
+ 305               	.LCFI2:
+ 306               		.cfi_def_cfa_offset 5
+ 307               		.cfi_offset 27, -4
+ 308               	/* prologue: Signal */
+ 309               	/* frame size = 0 */
+ 310               	/* stack size = 3...7 */
+ 311               	.L__stack_usage = 3 + __gcc_isr.n_pushed
+ 140:./tmk_core/common/avr/suspend.c ****     // compensate timer for sleep
+ 141:./tmk_core/common/avr/suspend.c ****     switch (wdt_timeout) {
+ 312               		.loc 1 141 5 view .LVU67
+ 313 0010 8091 0000 		lds r24,wdt_timeout
+ 314 0014 8111      		cpse r24,__zero_reg__
+ 315 0016 00C0      		rjmp .L12
+ 142:./tmk_core/common/avr/suspend.c ****         case WDTO_15MS:
+ 143:./tmk_core/common/avr/suspend.c ****             timer_count += 15 + 2;  // WDTO_15MS + 2(from observation)
+ 316               		.loc 1 143 13 view .LVU68
+ 317               		.loc 1 143 25 is_stmt 0 view .LVU69
+ 318 0018 8091 0000 		lds r24,timer_count
+ 319 001c 9091 0000 		lds r25,timer_count+1
+ 320 0020 A091 0000 		lds r26,timer_count+2
+ 321 0024 B091 0000 		lds r27,timer_count+3
+ 322 0028 4196      		adiw r24,17
+ 323 002a A11D      		adc r26,__zero_reg__
+ 324 002c B11D      		adc r27,__zero_reg__
+ 325 002e 8093 0000 		sts timer_count,r24
+ 326 0032 9093 0000 		sts timer_count+1,r25
+ 327 0036 A093 0000 		sts timer_count+2,r26
+ 328 003a B093 0000 		sts timer_count+3,r27
+ 144:./tmk_core/common/avr/suspend.c ****             break;
+ 329               		.loc 1 144 13 is_stmt 1 view .LVU70
+ 145:./tmk_core/common/avr/suspend.c ****         default:
+ 146:./tmk_core/common/avr/suspend.c ****             ;
+ 330               		.loc 1 146 13 view .LVU71
+ 331               	.L12:
+ 332               	/* epilogue start */
+ 147:./tmk_core/common/avr/suspend.c ****     }
+ 148:./tmk_core/common/avr/suspend.c **** }
+ 333               		.loc 1 148 1 is_stmt 0 view .LVU72
+ 334 003e BF91      		pop r27
+ 335 0040 AF91      		pop r26
+ 336 0042 9F91      		pop r25
+ 337 0044 8F91 1F90 		__gcc_isr 2
+ 337      1FBE 1F90 
+ 338 004c 1895      		reti
+ 339               		__gcc_isr 0,r24
+ 340               		.cfi_endproc
+ 341               	.LFE115:
+ 343               		.section	.bss.wdt_timeout,"aw",@nobits
+ 346               	wdt_timeout:
+ 347 0000 00        		.zero	1
+ 348               		.text
+ 349               	.Letext0:
+ 350               		.file 3 "/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/stdint.h"
+ 351               		.file 4 "./tmk_core/common/action.h"
+ 352               		.file 5 "./tmk_core/common/timer.h"
+ 353               		.file 6 "./tmk_core/protocol/lufa/LUFA-git/LUFA/Drivers/USB/Core/AVR8/../StdRequestType.h"
+ 354               		.file 7 "./tmk_core/protocol/lufa/LUFA-git/LUFA/Drivers/USB/Core/AVR8/../DeviceStandardReq.h"
+ 355               		.file 8 "./tmk_core/protocol/lufa/LUFA-git/LUFA/Drivers/USB/Core/USBTask.h"
+ 356               		.file 9 "./tmk_core/protocol/lufa/LUFA-git/LUFA/Drivers/USB/Core/HostStandardReq.h"
+ 357               		.file 10 "/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/stdio.h"
+ 358               		.file 11 "./tmk_core/common/report.h"
+ 359               		.file 12 "./tmk_core/common/host_driver.h"
+ 360               		.file 13 "./tmk_core/common/host.h"
+ 361               		.file 14 "./tmk_core/protocol/lufa/lufa.h"
+ 362               		.file 15 "./tmk_core/common/backlight.h"
+ 363               		.file 16 "./tmk_core/common/led.h"
+ 364               		.file 17 "./tmk_core/common/matrix.h"
+ 365               		.file 18 "./tmk_core/protocol/lufa/LUFA-git/LUFA/Drivers/USB/Core/AVR8/../Device.h"
+DEFINED SYMBOLS
+                            *ABS*:0000000000000000 suspend.c
+/var/folders/0z/ym_gdwfd5tg7m49f_1nfh8300000gn/T//cckfZZYC.s:2      *ABS*:000000000000003e __SP_H__
+/var/folders/0z/ym_gdwfd5tg7m49f_1nfh8300000gn/T//cckfZZYC.s:3      *ABS*:000000000000003d __SP_L__
+/var/folders/0z/ym_gdwfd5tg7m49f_1nfh8300000gn/T//cckfZZYC.s:4      *ABS*:000000000000003f __SREG__
+/var/folders/0z/ym_gdwfd5tg7m49f_1nfh8300000gn/T//cckfZZYC.s:5      *ABS*:0000000000000000 __tmp_reg__
+/var/folders/0z/ym_gdwfd5tg7m49f_1nfh8300000gn/T//cckfZZYC.s:6      *ABS*:0000000000000001 __zero_reg__
+/var/folders/0z/ym_gdwfd5tg7m49f_1nfh8300000gn/T//cckfZZYC.s:13     .text.suspend_idle:0000000000000000 suspend_idle
+/var/folders/0z/ym_gdwfd5tg7m49f_1nfh8300000gn/T//cckfZZYC.s:71     .text.suspend_power_down:0000000000000000 suspend_power_down
+/var/folders/0z/ym_gdwfd5tg7m49f_1nfh8300000gn/T//cckfZZYC.s:346    .bss.wdt_timeout:0000000000000000 wdt_timeout
+/var/folders/0z/ym_gdwfd5tg7m49f_1nfh8300000gn/T//cckfZZYC.s:189    .text.matrix_power_up:0000000000000000 matrix_power_up
+/var/folders/0z/ym_gdwfd5tg7m49f_1nfh8300000gn/T//cckfZZYC.s:189    .text.matrix_power_up:0000000000000000 matrix_power_up.localalias
+/var/folders/0z/ym_gdwfd5tg7m49f_1nfh8300000gn/T//cckfZZYC.s:208    .text.matrix_power_down:0000000000000000 matrix_power_down
+/var/folders/0z/ym_gdwfd5tg7m49f_1nfh8300000gn/T//cckfZZYC.s:223    .text.suspend_wakeup_condition:0000000000000000 suspend_wakeup_condition
+/var/folders/0z/ym_gdwfd5tg7m49f_1nfh8300000gn/T//cckfZZYC.s:266    .text.suspend_wakeup_init:0000000000000000 suspend_wakeup_init
+/var/folders/0z/ym_gdwfd5tg7m49f_1nfh8300000gn/T//cckfZZYC.s:291    .text.__vector_12:0000000000000000 __vector_12
+                            *ABS*:0000000000000003 __gcc_isr.n_pushed.001
+
+UNDEFINED SYMBOLS
+USB_DeviceState
+backlight_set
+led_set
+matrix_scan
+matrix_get_row
+clear_keyboard
+backlight_init
+host_keyboard_leds
+timer_count
+__do_clear_bss

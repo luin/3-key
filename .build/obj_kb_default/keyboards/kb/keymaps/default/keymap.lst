@@ -1,0 +1,359 @@
+   1               		.file	"keymap.c"
+   2               	__SP_H__ = 0x3e
+   3               	__SP_L__ = 0x3d
+   4               	__SREG__ = 0x3f
+   5               	__tmp_reg__ = 0
+   6               	__zero_reg__ = 1
+   7               		.text
+   8               	.Ltext0:
+   9               		.cfi_sections	.debug_frame
+  10               		.section	.text.action_get_macro,"ax",@progbits
+  11               	.global	action_get_macro
+  13               	action_get_macro:
+  14               	.LVL0:
+  15               	.LFB107:
+  16               		.file 1 "keyboards/kb/keymaps/default/keymap.c"
+   1:keyboards/kb/keymaps/default/keymap.c **** #include "kb.h"
+   2:keyboards/kb/keymaps/default/keymap.c **** 
+   3:keyboards/kb/keymaps/default/keymap.c **** enum {
+   4:keyboards/kb/keymaps/default/keymap.c ****     TD_MUTE_PAUSE,
+   5:keyboards/kb/keymaps/default/keymap.c ****     TD_VOLD_PREV,
+   6:keyboards/kb/keymaps/default/keymap.c ****     TD_VOLU_NEXT,
+   7:keyboards/kb/keymaps/default/keymap.c **** };
+   8:keyboards/kb/keymaps/default/keymap.c **** 
+   9:keyboards/kb/keymaps/default/keymap.c **** qk_tap_dance_action_t tap_dance_actions[] = {
+  10:keyboards/kb/keymaps/default/keymap.c ****     [TD_MUTE_PAUSE] = ACTION_TAP_DANCE_DOUBLE(KC_MUTE, KC_MPLY),
+  11:keyboards/kb/keymaps/default/keymap.c ****     [TD_VOLD_PREV] = ACTION_TAP_DANCE_DOUBLE(KC_VOLD, KC_MPRV),
+  12:keyboards/kb/keymaps/default/keymap.c ****     [TD_VOLU_NEXT] = ACTION_TAP_DANCE_DOUBLE(KC_VOLU, KC_MNXT),
+  13:keyboards/kb/keymaps/default/keymap.c **** };
+  14:keyboards/kb/keymaps/default/keymap.c **** 
+  15:keyboards/kb/keymaps/default/keymap.c **** 
+  16:keyboards/kb/keymaps/default/keymap.c **** const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
+  17:keyboards/kb/keymaps/default/keymap.c **** 
+  18:keyboards/kb/keymaps/default/keymap.c **** 	KEYMAP(
+  19:keyboards/kb/keymaps/default/keymap.c **** 		TD(TD_MUTE_PAUSE), TD(TD_VOLD_PREV), TD(TD_VOLU_NEXT)),
+  20:keyboards/kb/keymaps/default/keymap.c **** 
+  21:keyboards/kb/keymaps/default/keymap.c **** 	KEYMAP(
+  22:keyboards/kb/keymaps/default/keymap.c **** 		KC_TRNS, KC_TRNS, KC_TRNS),
+  23:keyboards/kb/keymaps/default/keymap.c **** 
+  24:keyboards/kb/keymaps/default/keymap.c **** 	KEYMAP(
+  25:keyboards/kb/keymaps/default/keymap.c **** 		KC_NUHS, KC_TRNS, KC_TRNS),
+  26:keyboards/kb/keymaps/default/keymap.c **** 
+  27:keyboards/kb/keymaps/default/keymap.c **** 	KEYMAP(
+  28:keyboards/kb/keymaps/default/keymap.c **** 		KC_TRNS, KC_TRNS, KC_TRNS),
+  29:keyboards/kb/keymaps/default/keymap.c **** 
+  30:keyboards/kb/keymaps/default/keymap.c **** 	KEYMAP(
+  31:keyboards/kb/keymaps/default/keymap.c **** 		KC_TRNS, KC_TRNS, KC_TRNS),
+  32:keyboards/kb/keymaps/default/keymap.c **** 
+  33:keyboards/kb/keymaps/default/keymap.c **** 	KEYMAP(
+  34:keyboards/kb/keymaps/default/keymap.c **** 		KC_TRNS, KC_TRNS, KC_TRNS),
+  35:keyboards/kb/keymaps/default/keymap.c **** 
+  36:keyboards/kb/keymaps/default/keymap.c **** 	KEYMAP(
+  37:keyboards/kb/keymaps/default/keymap.c **** 		KC_TRNS, KC_TRNS, KC_TRNS),
+  38:keyboards/kb/keymaps/default/keymap.c **** 
+  39:keyboards/kb/keymaps/default/keymap.c **** 	KEYMAP(
+  40:keyboards/kb/keymaps/default/keymap.c **** 		KC_TRNS, KC_TRNS, KC_TRNS),
+  41:keyboards/kb/keymaps/default/keymap.c **** 
+  42:keyboards/kb/keymaps/default/keymap.c **** 	KEYMAP(
+  43:keyboards/kb/keymaps/default/keymap.c **** 		KC_TRNS, KC_TRNS, KC_TRNS),
+  44:keyboards/kb/keymaps/default/keymap.c **** 
+  45:keyboards/kb/keymaps/default/keymap.c **** 	KEYMAP(
+  46:keyboards/kb/keymaps/default/keymap.c **** 		KC_TRNS, KC_TRNS, KC_TRNS),
+  47:keyboards/kb/keymaps/default/keymap.c **** 
+  48:keyboards/kb/keymaps/default/keymap.c **** 	KEYMAP(
+  49:keyboards/kb/keymaps/default/keymap.c **** 		KC_TRNS, KC_TRNS, KC_TRNS),
+  50:keyboards/kb/keymaps/default/keymap.c **** 
+  51:keyboards/kb/keymaps/default/keymap.c **** 	KEYMAP(
+  52:keyboards/kb/keymaps/default/keymap.c **** 		KC_TRNS, KC_TRNS, KC_TRNS),
+  53:keyboards/kb/keymaps/default/keymap.c **** 
+  54:keyboards/kb/keymaps/default/keymap.c **** 	KEYMAP(
+  55:keyboards/kb/keymaps/default/keymap.c **** 		KC_TRNS, KC_TRNS, KC_TRNS),
+  56:keyboards/kb/keymaps/default/keymap.c **** 
+  57:keyboards/kb/keymaps/default/keymap.c **** 	KEYMAP(
+  58:keyboards/kb/keymaps/default/keymap.c **** 		KC_TRNS, KC_TRNS, KC_TRNS),
+  59:keyboards/kb/keymaps/default/keymap.c **** 
+  60:keyboards/kb/keymaps/default/keymap.c **** 	KEYMAP(
+  61:keyboards/kb/keymaps/default/keymap.c **** 		KC_TRNS, KC_TRNS, KC_TRNS),
+  62:keyboards/kb/keymaps/default/keymap.c **** 
+  63:keyboards/kb/keymaps/default/keymap.c **** 	KEYMAP(
+  64:keyboards/kb/keymaps/default/keymap.c **** 		KC_TRNS, KC_TRNS, KC_TRNS)
+  65:keyboards/kb/keymaps/default/keymap.c **** 
+  66:keyboards/kb/keymaps/default/keymap.c **** };
+  67:keyboards/kb/keymaps/default/keymap.c **** 
+  68:keyboards/kb/keymaps/default/keymap.c **** const macro_t *action_get_macro(keyrecord_t *record, uint8_t id, uint8_t opt) {
+  17               		.loc 1 68 79 view -0
+  18               		.cfi_startproc
+  19               	/* prologue: function */
+  20               	/* frame size = 0 */
+  21               	/* stack size = 0 */
+  22               	.L__stack_usage = 0
+  69:keyboards/kb/keymaps/default/keymap.c **** 	keyevent_t event = record->event;
+  23               		.loc 1 69 2 view .LVU1
+  70:keyboards/kb/keymaps/default/keymap.c **** 
+  71:keyboards/kb/keymaps/default/keymap.c **** 	switch (id) {
+  24               		.loc 1 71 2 view .LVU2
+  72:keyboards/kb/keymaps/default/keymap.c **** 
+  73:keyboards/kb/keymaps/default/keymap.c **** 	}
+  25               		.loc 1 73 2 view .LVU3
+  74:keyboards/kb/keymaps/default/keymap.c **** 	return MACRO_NONE;
+  26               		.loc 1 74 2 view .LVU4
+  75:keyboards/kb/keymaps/default/keymap.c **** }
+  27               		.loc 1 75 1 is_stmt 0 view .LVU5
+  28 0000 90E0      		ldi r25,0
+  29 0002 80E0      		ldi r24,0
+  30               	.LVL1:
+  31               	/* epilogue start */
+  32               		.loc 1 75 1 view .LVU6
+  33 0004 0895      		ret
+  34               		.cfi_endproc
+  35               	.LFE107:
+  37               		.section	.text.matrix_init_user,"ax",@progbits
+  38               	.global	matrix_init_user
+  40               	matrix_init_user:
+  41               	.LFB108:
+  76:keyboards/kb/keymaps/default/keymap.c **** 
+  77:keyboards/kb/keymaps/default/keymap.c **** void matrix_init_user(void) {
+  42               		.loc 1 77 29 is_stmt 1 view -0
+  43               		.cfi_startproc
+  44               	/* prologue: function */
+  45               	/* frame size = 0 */
+  46               	/* stack size = 0 */
+  47               	.L__stack_usage = 0
+  78:keyboards/kb/keymaps/default/keymap.c **** }
+  48               		.loc 1 78 1 view .LVU8
+  49               	/* epilogue start */
+  50 0000 0895      		ret
+  51               		.cfi_endproc
+  52               	.LFE108:
+  54               		.section	.text.matrix_scan_user,"ax",@progbits
+  55               	.global	matrix_scan_user
+  57               	matrix_scan_user:
+  58               	.LFB113:
+  59               		.cfi_startproc
+  60               	/* prologue: function */
+  61               	/* frame size = 0 */
+  62               	/* stack size = 0 */
+  63               	.L__stack_usage = 0
+  64               	/* epilogue start */
+  65 0000 0895      		ret
+  66               		.cfi_endproc
+  67               	.LFE113:
+  69               		.section	.text.process_record_user,"ax",@progbits
+  70               	.global	process_record_user
+  72               	process_record_user:
+  73               	.LVL2:
+  74               	.LFB110:
+  79:keyboards/kb/keymaps/default/keymap.c **** 
+  80:keyboards/kb/keymaps/default/keymap.c **** void matrix_scan_user(void) {
+  81:keyboards/kb/keymaps/default/keymap.c **** }
+  82:keyboards/kb/keymaps/default/keymap.c **** 
+  83:keyboards/kb/keymaps/default/keymap.c **** bool process_record_user(uint16_t keycode, keyrecord_t *record) {
+  75               		.loc 1 83 65 view -0
+  76               		.cfi_startproc
+  77               	/* prologue: function */
+  78               	/* frame size = 0 */
+  79               	/* stack size = 0 */
+  80               	.L__stack_usage = 0
+  84:keyboards/kb/keymaps/default/keymap.c **** 	return true;
+  81               		.loc 1 84 2 view .LVU10
+  85:keyboards/kb/keymaps/default/keymap.c **** }
+  82               		.loc 1 85 1 is_stmt 0 view .LVU11
+  83 0000 81E0      		ldi r24,lo8(1)
+  84               	.LVL3:
+  85               	/* epilogue start */
+  86               		.loc 1 85 1 view .LVU12
+  87 0002 0895      		ret
+  88               		.cfi_endproc
+  89               	.LFE110:
+  91               		.section	.text.led_set_user,"ax",@progbits
+  92               	.global	led_set_user
+  94               	led_set_user:
+  95               	.LVL4:
+  96               	.LFB111:
+  86:keyboards/kb/keymaps/default/keymap.c **** 
+  87:keyboards/kb/keymaps/default/keymap.c **** void led_set_user(uint8_t usb_led) {
+  97               		.loc 1 87 36 is_stmt 1 view -0
+  98               		.cfi_startproc
+  99               	/* prologue: function */
+ 100               	/* frame size = 0 */
+ 101               	/* stack size = 0 */
+ 102               	.L__stack_usage = 0
+  88:keyboards/kb/keymaps/default/keymap.c **** 
+  89:keyboards/kb/keymaps/default/keymap.c **** 	if (usb_led & (1 << USB_LED_NUM_LOCK)) {
+ 103               		.loc 1 89 2 view .LVU14
+  90:keyboards/kb/keymaps/default/keymap.c **** 		
+  91:keyboards/kb/keymaps/default/keymap.c **** 	} else {
+  92:keyboards/kb/keymaps/default/keymap.c **** 		
+  93:keyboards/kb/keymaps/default/keymap.c **** 	}
+ 104               		.loc 1 93 2 view .LVU15
+  94:keyboards/kb/keymaps/default/keymap.c **** 
+  95:keyboards/kb/keymaps/default/keymap.c **** 	if (usb_led & (1 << USB_LED_CAPS_LOCK)) {
+ 105               		.loc 1 95 2 view .LVU16
+  96:keyboards/kb/keymaps/default/keymap.c **** 		
+  97:keyboards/kb/keymaps/default/keymap.c **** 	} else {
+  98:keyboards/kb/keymaps/default/keymap.c **** 		
+  99:keyboards/kb/keymaps/default/keymap.c **** 	}
+ 106               		.loc 1 99 2 view .LVU17
+ 100:keyboards/kb/keymaps/default/keymap.c **** 
+ 101:keyboards/kb/keymaps/default/keymap.c **** 	if (usb_led & (1 << USB_LED_SCROLL_LOCK)) {
+ 107               		.loc 1 101 2 view .LVU18
+ 102:keyboards/kb/keymaps/default/keymap.c **** 		
+ 103:keyboards/kb/keymaps/default/keymap.c **** 	} else {
+ 104:keyboards/kb/keymaps/default/keymap.c **** 		
+ 105:keyboards/kb/keymaps/default/keymap.c **** 	}
+ 108               		.loc 1 105 2 view .LVU19
+ 106:keyboards/kb/keymaps/default/keymap.c **** 
+ 107:keyboards/kb/keymaps/default/keymap.c **** 	if (usb_led & (1 << USB_LED_COMPOSE)) {
+ 109               		.loc 1 107 2 view .LVU20
+ 108:keyboards/kb/keymaps/default/keymap.c **** 		
+ 109:keyboards/kb/keymaps/default/keymap.c **** 	} else {
+ 110:keyboards/kb/keymaps/default/keymap.c **** 		
+ 111:keyboards/kb/keymaps/default/keymap.c **** 	}
+ 110               		.loc 1 111 2 view .LVU21
+ 112:keyboards/kb/keymaps/default/keymap.c **** 
+ 113:keyboards/kb/keymaps/default/keymap.c **** 	if (usb_led & (1 << USB_LED_KANA)) {
+ 111               		.loc 1 113 2 view .LVU22
+ 114:keyboards/kb/keymaps/default/keymap.c **** 		
+ 115:keyboards/kb/keymaps/default/keymap.c **** 	} else {
+ 116:keyboards/kb/keymaps/default/keymap.c **** 		
+ 117:keyboards/kb/keymaps/default/keymap.c **** 	}
+ 112               		.loc 1 117 2 view .LVU23
+ 113               	/* epilogue start */
+ 118:keyboards/kb/keymaps/default/keymap.c **** 
+ 119:keyboards/kb/keymaps/default/keymap.c **** }...
+ 114               		.loc 1 119 1 is_stmt 0 view .LVU24
+ 115 0000 0895      		ret
+ 116               		.cfi_endproc
+ 117               	.LFE111:
+ 119               	.global	keymaps
+ 120               		.section	.progmem.data.keymaps,"a"
+ 123               	keymaps:
+ 124 0000 0071      		.word	28928
+ 125 0002 0171      		.word	28929
+ 126 0004 0271      		.word	28930
+ 127 0006 0100      		.word	1
+ 128 0008 0100      		.word	1
+ 129 000a 0100      		.word	1
+ 130 000c 3200      		.word	50
+ 131 000e 0100      		.word	1
+ 132 0010 0100      		.word	1
+ 133 0012 0100      		.word	1
+ 134 0014 0100      		.word	1
+ 135 0016 0100      		.word	1
+ 136 0018 0100      		.word	1
+ 137 001a 0100      		.word	1
+ 138 001c 0100      		.word	1
+ 139 001e 0100      		.word	1
+ 140 0020 0100      		.word	1
+ 141 0022 0100      		.word	1
+ 142 0024 0100      		.word	1
+ 143 0026 0100      		.word	1
+ 144 0028 0100      		.word	1
+ 145 002a 0100      		.word	1
+ 146 002c 0100      		.word	1
+ 147 002e 0100      		.word	1
+ 148 0030 0100      		.word	1
+ 149 0032 0100      		.word	1
+ 150 0034 0100      		.word	1
+ 151 0036 0100      		.word	1
+ 152 0038 0100      		.word	1
+ 153 003a 0100      		.word	1
+ 154 003c 0100      		.word	1
+ 155 003e 0100      		.word	1
+ 156 0040 0100      		.word	1
+ 157 0042 0100      		.word	1
+ 158 0044 0100      		.word	1
+ 159 0046 0100      		.word	1
+ 160 0048 0100      		.word	1
+ 161 004a 0100      		.word	1
+ 162 004c 0100      		.word	1
+ 163 004e 0100      		.word	1
+ 164 0050 0100      		.word	1
+ 165 0052 0100      		.word	1
+ 166 0054 0100      		.word	1
+ 167 0056 0100      		.word	1
+ 168 0058 0100      		.word	1
+ 169 005a 0100      		.word	1
+ 170 005c 0100      		.word	1
+ 171 005e 0100      		.word	1
+ 172               	.global	tap_dance_actions
+ 173               		.section	.data.tap_dance_actions,"aw"
+ 176               	tap_dance_actions:
+ 177 0000 0000      		.word	0
+ 178 0002 0000      		.word	gs(qk_tap_dance_pair_finished)
+ 179 0004 0000      		.word	gs(qk_tap_dance_pair_reset)
+ 180 0006 0000 0000 		.zero	8
+ 180      0000 0000 
+ 181 000e 0000      		.word	__compound_literal.0
+ 182 0010 0000      		.word	0
+ 183 0012 0000      		.word	gs(qk_tap_dance_pair_finished)
+ 184 0014 0000      		.word	gs(qk_tap_dance_pair_reset)
+ 185 0016 0000 0000 		.zero	8
+ 185      0000 0000 
+ 186 001e 0000      		.word	__compound_literal.1
+ 187 0020 0000      		.word	0
+ 188 0022 0000      		.word	gs(qk_tap_dance_pair_finished)
+ 189 0024 0000      		.word	gs(qk_tap_dance_pair_reset)
+ 190 0026 0000 0000 		.zero	8
+ 190      0000 0000 
+ 191 002e 0000      		.word	__compound_literal.2
+ 192               		.section	.data.__compound_literal.2,"aw"
+ 195               	__compound_literal.2:
+ 196 0000 A900      		.word	169
+ 197 0002 AB00      		.word	171
+ 198               		.section	.data.__compound_literal.1,"aw"
+ 201               	__compound_literal.1:
+ 202 0000 AA00      		.word	170
+ 203 0002 AC00      		.word	172
+ 204               		.section	.data.__compound_literal.0,"aw"
+ 207               	__compound_literal.0:
+ 208 0000 A800      		.word	168
+ 209 0002 AE00      		.word	174
+ 210               		.text
+ 211               	.Letext0:
+ 212               		.file 2 "/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/stdint.h"
+ 213               		.file 3 "/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/lib/avr-gcc/9/gcc/avr/9.3.0/include/stddef.h"
+ 214               		.file 4 "./tmk_core/common/keyboard.h"
+ 215               		.file 5 "./tmk_core/common/keycode.h"
+ 216               		.file 6 "./tmk_core/common/action_macro.h"
+ 217               		.file 7 "./tmk_core/common/action.h"
+ 218               		.file 8 "./tmk_core/protocol/lufa/LUFA-git/LUFA/Drivers/USB/Core/AVR8/../StdRequestType.h"
+ 219               		.file 9 "./tmk_core/protocol/lufa/LUFA-git/LUFA/Drivers/USB/Core/AVR8/../DeviceStandardReq.h"
+ 220               		.file 10 "./tmk_core/protocol/lufa/LUFA-git/LUFA/Drivers/USB/Core/USBTask.h"
+ 221               		.file 11 "./tmk_core/protocol/lufa/LUFA-git/LUFA/Drivers/USB/Core/HostStandardReq.h"
+ 222               		.file 12 "/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/stdio.h"
+ 223               		.file 13 "./tmk_core/common/report.h"
+ 224               		.file 14 "./tmk_core/common/host.h"
+ 225               		.file 15 "./tmk_core/common/debug.h"
+ 226               		.file 16 "./quantum/keycode_config.h"
+ 227               		.file 17 "./quantum/quantum_keycodes.h"
+ 228               		.file 18 "./quantum/keymap.h"
+ 229               		.file 19 "./quantum/light_ws2812.h"
+ 230               		.file 20 "./quantum/rgblight.h"
+ 231               		.file 21 "./tmk_core/common/action_layer.h"
+ 232               		.file 22 "./tmk_core/common/timer.h"
+ 233               		.file 23 "./tmk_core/common/action_util.h"
+ 234               		.file 24 "/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/stdlib.h"
+ 235               		.file 25 "./quantum/process_keycode/process_tap_dance.h"
+DEFINED SYMBOLS
+                            *ABS*:0000000000000000 keymap.c
+/var/folders/0z/ym_gdwfd5tg7m49f_1nfh8300000gn/T//cc8sEJxv.s:2      *ABS*:000000000000003e __SP_H__
+/var/folders/0z/ym_gdwfd5tg7m49f_1nfh8300000gn/T//cc8sEJxv.s:3      *ABS*:000000000000003d __SP_L__
+/var/folders/0z/ym_gdwfd5tg7m49f_1nfh8300000gn/T//cc8sEJxv.s:4      *ABS*:000000000000003f __SREG__
+/var/folders/0z/ym_gdwfd5tg7m49f_1nfh8300000gn/T//cc8sEJxv.s:5      *ABS*:0000000000000000 __tmp_reg__
+/var/folders/0z/ym_gdwfd5tg7m49f_1nfh8300000gn/T//cc8sEJxv.s:6      *ABS*:0000000000000001 __zero_reg__
+/var/folders/0z/ym_gdwfd5tg7m49f_1nfh8300000gn/T//cc8sEJxv.s:13     .text.action_get_macro:0000000000000000 action_get_macro
+/var/folders/0z/ym_gdwfd5tg7m49f_1nfh8300000gn/T//cc8sEJxv.s:40     .text.matrix_init_user:0000000000000000 matrix_init_user
+/var/folders/0z/ym_gdwfd5tg7m49f_1nfh8300000gn/T//cc8sEJxv.s:57     .text.matrix_scan_user:0000000000000000 matrix_scan_user
+/var/folders/0z/ym_gdwfd5tg7m49f_1nfh8300000gn/T//cc8sEJxv.s:72     .text.process_record_user:0000000000000000 process_record_user
+/var/folders/0z/ym_gdwfd5tg7m49f_1nfh8300000gn/T//cc8sEJxv.s:94     .text.led_set_user:0000000000000000 led_set_user
+/var/folders/0z/ym_gdwfd5tg7m49f_1nfh8300000gn/T//cc8sEJxv.s:123    .progmem.data.keymaps:0000000000000000 keymaps
+/var/folders/0z/ym_gdwfd5tg7m49f_1nfh8300000gn/T//cc8sEJxv.s:176    .data.tap_dance_actions:0000000000000000 tap_dance_actions
+/var/folders/0z/ym_gdwfd5tg7m49f_1nfh8300000gn/T//cc8sEJxv.s:207    .data.__compound_literal.0:0000000000000000 __compound_literal.0
+/var/folders/0z/ym_gdwfd5tg7m49f_1nfh8300000gn/T//cc8sEJxv.s:201    .data.__compound_literal.1:0000000000000000 __compound_literal.1
+/var/folders/0z/ym_gdwfd5tg7m49f_1nfh8300000gn/T//cc8sEJxv.s:195    .data.__compound_literal.2:0000000000000000 __compound_literal.2
+
+UNDEFINED SYMBOLS
+qk_tap_dance_pair_finished
+qk_tap_dance_pair_reset
+__do_copy_data

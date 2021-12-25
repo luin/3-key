@@ -1,0 +1,909 @@
+   1               		.file	"light_ws2812.c"
+   2               	__SP_H__ = 0x3e
+   3               	__SP_L__ = 0x3d
+   4               	__SREG__ = 0x3f
+   5               	__tmp_reg__ = 0
+   6               	__zero_reg__ = 1
+   7               		.text
+   8               	.Ltext0:
+   9               		.cfi_sections	.debug_frame
+  10               		.section	.text.ws2812_sendarray_mask,"ax",@progbits
+  11               	.global	ws2812_sendarray_mask
+  13               	ws2812_sendarray_mask:
+  14               	.LVL0:
+  15               	.LFB10:
+  16               		.file 1 "quantum/light_ws2812.c"
+   1:quantum/light_ws2812.c **** /*
+   2:quantum/light_ws2812.c **** * light weight WS2812 lib V2.0b
+   3:quantum/light_ws2812.c **** *
+   4:quantum/light_ws2812.c **** * Controls WS2811/WS2812/WS2812B RGB-LEDs
+   5:quantum/light_ws2812.c **** * Author: Tim (cpldcpu@gmail.com)
+   6:quantum/light_ws2812.c **** *
+   7:quantum/light_ws2812.c **** * Jan 18th, 2014  v2.0b Initial Version
+   8:quantum/light_ws2812.c **** * Nov 29th, 2015  v2.3  Added SK6812RGBW support
+   9:quantum/light_ws2812.c **** *
+  10:quantum/light_ws2812.c **** * License: GNU GPL v2 (see License.txt)
+  11:quantum/light_ws2812.c **** */
+  12:quantum/light_ws2812.c **** 
+  13:quantum/light_ws2812.c **** #include "light_ws2812.h"
+  14:quantum/light_ws2812.c **** #include <avr/interrupt.h>
+  15:quantum/light_ws2812.c **** #include <avr/io.h>
+  16:quantum/light_ws2812.c **** #include <util/delay.h>
+  17:quantum/light_ws2812.c **** #include "debug.h"
+  18:quantum/light_ws2812.c **** 
+  19:quantum/light_ws2812.c **** #ifdef RGBW_BB_TWI
+  20:quantum/light_ws2812.c **** 
+  21:quantum/light_ws2812.c **** // Port for the I2C
+  22:quantum/light_ws2812.c **** #define I2C_DDR DDRD
+  23:quantum/light_ws2812.c **** #define I2C_PIN PIND
+  24:quantum/light_ws2812.c **** #define I2C_PORT PORTD
+  25:quantum/light_ws2812.c **** 
+  26:quantum/light_ws2812.c **** // Pins to be used in the bit banging
+  27:quantum/light_ws2812.c **** #define I2C_CLK 0
+  28:quantum/light_ws2812.c **** #define I2C_DAT 1
+  29:quantum/light_ws2812.c **** 
+  30:quantum/light_ws2812.c **** #define I2C_DATA_HI()\
+  31:quantum/light_ws2812.c **** I2C_DDR &= ~ (1 << I2C_DAT);\
+  32:quantum/light_ws2812.c **** I2C_PORT |= (1 << I2C_DAT);
+  33:quantum/light_ws2812.c **** #define I2C_DATA_LO()\
+  34:quantum/light_ws2812.c **** I2C_DDR |= (1 << I2C_DAT);\
+  35:quantum/light_ws2812.c **** I2C_PORT &= ~ (1 << I2C_DAT);
+  36:quantum/light_ws2812.c **** 
+  37:quantum/light_ws2812.c **** #define I2C_CLOCK_HI()\
+  38:quantum/light_ws2812.c **** I2C_DDR &= ~ (1 << I2C_CLK);\
+  39:quantum/light_ws2812.c **** I2C_PORT |= (1 << I2C_CLK);
+  40:quantum/light_ws2812.c **** #define I2C_CLOCK_LO()\
+  41:quantum/light_ws2812.c **** I2C_DDR |= (1 << I2C_CLK);\
+  42:quantum/light_ws2812.c **** I2C_PORT &= ~ (1 << I2C_CLK);
+  43:quantum/light_ws2812.c **** 
+  44:quantum/light_ws2812.c **** #define I2C_DELAY 1
+  45:quantum/light_ws2812.c **** 
+  46:quantum/light_ws2812.c **** void I2C_WriteBit(unsigned char c)
+  47:quantum/light_ws2812.c **** {
+  48:quantum/light_ws2812.c ****     if (c > 0)
+  49:quantum/light_ws2812.c ****     {
+  50:quantum/light_ws2812.c ****         I2C_DATA_HI();
+  51:quantum/light_ws2812.c ****     }
+  52:quantum/light_ws2812.c ****     else
+  53:quantum/light_ws2812.c ****     {
+  54:quantum/light_ws2812.c ****         I2C_DATA_LO();
+  55:quantum/light_ws2812.c ****     }
+  56:quantum/light_ws2812.c **** 
+  57:quantum/light_ws2812.c ****     I2C_CLOCK_HI();
+  58:quantum/light_ws2812.c ****     _delay_us(I2C_DELAY);
+  59:quantum/light_ws2812.c **** 
+  60:quantum/light_ws2812.c ****     I2C_CLOCK_LO();
+  61:quantum/light_ws2812.c ****     _delay_us(I2C_DELAY);
+  62:quantum/light_ws2812.c **** 
+  63:quantum/light_ws2812.c ****     if (c > 0)
+  64:quantum/light_ws2812.c ****     {
+  65:quantum/light_ws2812.c ****         I2C_DATA_LO();
+  66:quantum/light_ws2812.c ****     }
+  67:quantum/light_ws2812.c **** 
+  68:quantum/light_ws2812.c ****     _delay_us(I2C_DELAY);
+  69:quantum/light_ws2812.c **** }
+  70:quantum/light_ws2812.c **** 
+  71:quantum/light_ws2812.c **** // Inits bitbanging port, must be called before using the functions below
+  72:quantum/light_ws2812.c **** //
+  73:quantum/light_ws2812.c **** void I2C_Init()
+  74:quantum/light_ws2812.c **** {
+  75:quantum/light_ws2812.c ****     I2C_PORT &= ~ ((1 << I2C_DAT) | (1 << I2C_CLK));
+  76:quantum/light_ws2812.c **** 
+  77:quantum/light_ws2812.c ****     I2C_CLOCK_HI();
+  78:quantum/light_ws2812.c ****     I2C_DATA_HI();
+  79:quantum/light_ws2812.c **** 
+  80:quantum/light_ws2812.c ****     _delay_us(I2C_DELAY);
+  81:quantum/light_ws2812.c **** }
+  82:quantum/light_ws2812.c **** 
+  83:quantum/light_ws2812.c **** // Send a START Condition
+  84:quantum/light_ws2812.c **** //
+  85:quantum/light_ws2812.c **** void I2C_Start()
+  86:quantum/light_ws2812.c **** {
+  87:quantum/light_ws2812.c ****     // set both to high at the same time
+  88:quantum/light_ws2812.c ****     I2C_DDR &= ~ ((1 << I2C_DAT) | (1 << I2C_CLK));
+  89:quantum/light_ws2812.c ****     _delay_us(I2C_DELAY);
+  90:quantum/light_ws2812.c **** 
+  91:quantum/light_ws2812.c ****     I2C_DATA_LO();
+  92:quantum/light_ws2812.c ****     _delay_us(I2C_DELAY);
+  93:quantum/light_ws2812.c **** 
+  94:quantum/light_ws2812.c ****     I2C_CLOCK_LO();
+  95:quantum/light_ws2812.c ****     _delay_us(I2C_DELAY);
+  96:quantum/light_ws2812.c **** }
+  97:quantum/light_ws2812.c **** 
+  98:quantum/light_ws2812.c **** // Send a STOP Condition
+  99:quantum/light_ws2812.c **** //
+ 100:quantum/light_ws2812.c **** void I2C_Stop()
+ 101:quantum/light_ws2812.c **** {
+ 102:quantum/light_ws2812.c ****     I2C_CLOCK_HI();
+ 103:quantum/light_ws2812.c ****     _delay_us(I2C_DELAY);
+ 104:quantum/light_ws2812.c **** 
+ 105:quantum/light_ws2812.c ****     I2C_DATA_HI();
+ 106:quantum/light_ws2812.c ****     _delay_us(I2C_DELAY);
+ 107:quantum/light_ws2812.c **** }
+ 108:quantum/light_ws2812.c **** 
+ 109:quantum/light_ws2812.c **** // write a byte to the I2C slave device
+ 110:quantum/light_ws2812.c **** //
+ 111:quantum/light_ws2812.c **** unsigned char I2C_Write(unsigned char c)
+ 112:quantum/light_ws2812.c **** {
+ 113:quantum/light_ws2812.c ****     for (char i = 0; i < 8; i++)
+ 114:quantum/light_ws2812.c ****     {
+ 115:quantum/light_ws2812.c ****         I2C_WriteBit(c & 128);
+ 116:quantum/light_ws2812.c **** 
+ 117:quantum/light_ws2812.c ****         c <<= 1;
+ 118:quantum/light_ws2812.c ****     }
+ 119:quantum/light_ws2812.c **** 
+ 120:quantum/light_ws2812.c ****     
+ 121:quantum/light_ws2812.c ****     I2C_WriteBit(0);
+ 122:quantum/light_ws2812.c ****     _delay_us(I2C_DELAY);
+ 123:quantum/light_ws2812.c ****     _delay_us(I2C_DELAY);
+ 124:quantum/light_ws2812.c ****   
+ 125:quantum/light_ws2812.c ****     // _delay_us(I2C_DELAY);
+ 126:quantum/light_ws2812.c ****     //return I2C_ReadBit();
+ 127:quantum/light_ws2812.c ****     return 0;
+ 128:quantum/light_ws2812.c **** }
+ 129:quantum/light_ws2812.c **** 
+ 130:quantum/light_ws2812.c **** 
+ 131:quantum/light_ws2812.c **** #endif
+ 132:quantum/light_ws2812.c **** 
+ 133:quantum/light_ws2812.c **** // Setleds for standard RGB
+ 134:quantum/light_ws2812.c **** void inline ws2812_setleds(LED_TYPE *ledarray, uint16_t leds)
+ 135:quantum/light_ws2812.c **** {
+ 136:quantum/light_ws2812.c ****    // ws2812_setleds_pin(ledarray,leds, _BV(ws2812_pin));
+ 137:quantum/light_ws2812.c ****    ws2812_setleds_pin(ledarray,leds, _BV(RGB_DI_PIN & 0xF));
+ 138:quantum/light_ws2812.c **** }
+ 139:quantum/light_ws2812.c **** 
+ 140:quantum/light_ws2812.c **** void inline ws2812_setleds_pin(LED_TYPE *ledarray, uint16_t leds, uint8_t pinmask)
+ 141:quantum/light_ws2812.c **** {
+ 142:quantum/light_ws2812.c ****   // ws2812_DDRREG |= pinmask; // Enable DDR
+ 143:quantum/light_ws2812.c ****   // new universal format (DDR)
+ 144:quantum/light_ws2812.c ****   _SFR_IO8((RGB_DI_PIN >> 4) + 1) |= pinmask;
+ 145:quantum/light_ws2812.c **** 
+ 146:quantum/light_ws2812.c ****   ws2812_sendarray_mask((uint8_t*)ledarray,leds+leds+leds,pinmask);
+ 147:quantum/light_ws2812.c ****   _delay_us(50);
+ 148:quantum/light_ws2812.c **** }
+ 149:quantum/light_ws2812.c **** 
+ 150:quantum/light_ws2812.c **** // Setleds for SK6812RGBW
+ 151:quantum/light_ws2812.c **** void inline ws2812_setleds_rgbw(LED_TYPE *ledarray, uint16_t leds)
+ 152:quantum/light_ws2812.c **** {
+ 153:quantum/light_ws2812.c **** 
+ 154:quantum/light_ws2812.c ****   #ifdef RGBW_BB_TWI
+ 155:quantum/light_ws2812.c ****     uint8_t sreg_prev, twcr_prev;
+ 156:quantum/light_ws2812.c ****     sreg_prev=SREG;
+ 157:quantum/light_ws2812.c ****     twcr_prev=TWCR;
+ 158:quantum/light_ws2812.c ****     cli();
+ 159:quantum/light_ws2812.c ****     TWCR &= ~(1<<TWEN);
+ 160:quantum/light_ws2812.c ****     I2C_Init();
+ 161:quantum/light_ws2812.c ****     I2C_Start();
+ 162:quantum/light_ws2812.c ****     I2C_Write(0x84);
+ 163:quantum/light_ws2812.c ****     uint16_t datlen = leds<<2;
+ 164:quantum/light_ws2812.c ****     uint8_t curbyte;
+ 165:quantum/light_ws2812.c ****     uint8_t * data = (uint8_t*)ledarray;
+ 166:quantum/light_ws2812.c ****     while (datlen--) {
+ 167:quantum/light_ws2812.c ****       curbyte=*data++;
+ 168:quantum/light_ws2812.c ****       I2C_Write(curbyte);
+ 169:quantum/light_ws2812.c ****     }
+ 170:quantum/light_ws2812.c ****     I2C_Stop();
+ 171:quantum/light_ws2812.c ****     SREG=sreg_prev;
+ 172:quantum/light_ws2812.c ****     TWCR=twcr_prev;
+ 173:quantum/light_ws2812.c ****   #endif
+ 174:quantum/light_ws2812.c **** 
+ 175:quantum/light_ws2812.c **** 
+ 176:quantum/light_ws2812.c ****   // ws2812_DDRREG |= _BV(ws2812_pin); // Enable DDR
+ 177:quantum/light_ws2812.c ****   // new universal format (DDR)
+ 178:quantum/light_ws2812.c ****   _SFR_IO8((RGB_DI_PIN >> 4) + 1) |= _BV(RGB_DI_PIN & 0xF);
+ 179:quantum/light_ws2812.c **** 
+ 180:quantum/light_ws2812.c ****   ws2812_sendarray_mask((uint8_t*)ledarray,leds<<2,_BV(RGB_DI_PIN & 0xF));
+ 181:quantum/light_ws2812.c **** 
+ 182:quantum/light_ws2812.c **** 
+ 183:quantum/light_ws2812.c ****   #ifndef RGBW_BB_TWI
+ 184:quantum/light_ws2812.c ****     _delay_us(80);
+ 185:quantum/light_ws2812.c ****   #endif
+ 186:quantum/light_ws2812.c **** }
+ 187:quantum/light_ws2812.c **** 
+ 188:quantum/light_ws2812.c **** void ws2812_sendarray(uint8_t *data,uint16_t datlen)
+ 189:quantum/light_ws2812.c **** {
+ 190:quantum/light_ws2812.c ****   ws2812_sendarray_mask(data,datlen,_BV(RGB_DI_PIN & 0xF));
+ 191:quantum/light_ws2812.c **** }
+ 192:quantum/light_ws2812.c **** 
+ 193:quantum/light_ws2812.c **** /*
+ 194:quantum/light_ws2812.c ****   This routine writes an array of bytes with RGB values to the Dataout pin
+ 195:quantum/light_ws2812.c ****   using the fast 800kHz clockless WS2811/2812 protocol.
+ 196:quantum/light_ws2812.c **** */
+ 197:quantum/light_ws2812.c **** 
+ 198:quantum/light_ws2812.c **** // Timing in ns
+ 199:quantum/light_ws2812.c **** #define w_zeropulse   350
+ 200:quantum/light_ws2812.c **** #define w_onepulse    900
+ 201:quantum/light_ws2812.c **** #define w_totalperiod 1250
+ 202:quantum/light_ws2812.c **** 
+ 203:quantum/light_ws2812.c **** // Fixed cycles used by the inner loop
+ 204:quantum/light_ws2812.c **** #define w_fixedlow    2
+ 205:quantum/light_ws2812.c **** #define w_fixedhigh   4
+ 206:quantum/light_ws2812.c **** #define w_fixedtotal  8
+ 207:quantum/light_ws2812.c **** 
+ 208:quantum/light_ws2812.c **** // Insert NOPs to match the timing, if possible
+ 209:quantum/light_ws2812.c **** #define w_zerocycles    (((F_CPU/1000)*w_zeropulse          )/1000000)
+ 210:quantum/light_ws2812.c **** #define w_onecycles     (((F_CPU/1000)*w_onepulse    +500000)/1000000)
+ 211:quantum/light_ws2812.c **** #define w_totalcycles   (((F_CPU/1000)*w_totalperiod +500000)/1000000)
+ 212:quantum/light_ws2812.c **** 
+ 213:quantum/light_ws2812.c **** // w1 - nops between rising edge and falling edge - low
+ 214:quantum/light_ws2812.c **** #define w1 (w_zerocycles-w_fixedlow)
+ 215:quantum/light_ws2812.c **** // w2   nops between fe low and fe high
+ 216:quantum/light_ws2812.c **** #define w2 (w_onecycles-w_fixedhigh-w1)
+ 217:quantum/light_ws2812.c **** // w3   nops to complete loop
+ 218:quantum/light_ws2812.c **** #define w3 (w_totalcycles-w_fixedtotal-w1-w2)
+ 219:quantum/light_ws2812.c **** 
+ 220:quantum/light_ws2812.c **** #if w1>0
+ 221:quantum/light_ws2812.c ****   #define w1_nops w1
+ 222:quantum/light_ws2812.c **** #else
+ 223:quantum/light_ws2812.c ****   #define w1_nops  0
+ 224:quantum/light_ws2812.c **** #endif
+ 225:quantum/light_ws2812.c **** 
+ 226:quantum/light_ws2812.c **** // The only critical timing parameter is the minimum pulse length of the "0"
+ 227:quantum/light_ws2812.c **** // Warn or throw error if this timing can not be met with current F_CPU settings.
+ 228:quantum/light_ws2812.c **** #define w_lowtime ((w1_nops+w_fixedlow)*1000000)/(F_CPU/1000)
+ 229:quantum/light_ws2812.c **** #if w_lowtime>550
+ 230:quantum/light_ws2812.c ****    #error "Light_ws2812: Sorry, the clock speed is too low. Did you set F_CPU correctly?"
+ 231:quantum/light_ws2812.c **** #elif w_lowtime>450
+ 232:quantum/light_ws2812.c ****    #warning "Light_ws2812: The timing is critical and may only work on WS2812B, not on WS2812(S)."
+ 233:quantum/light_ws2812.c ****    #warning "Please consider a higher clockspeed, if possible"
+ 234:quantum/light_ws2812.c **** #endif
+ 235:quantum/light_ws2812.c **** 
+ 236:quantum/light_ws2812.c **** #if w2>0
+ 237:quantum/light_ws2812.c **** #define w2_nops w2
+ 238:quantum/light_ws2812.c **** #else
+ 239:quantum/light_ws2812.c **** #define w2_nops  0
+ 240:quantum/light_ws2812.c **** #endif
+ 241:quantum/light_ws2812.c **** 
+ 242:quantum/light_ws2812.c **** #if w3>0
+ 243:quantum/light_ws2812.c **** #define w3_nops w3
+ 244:quantum/light_ws2812.c **** #else
+ 245:quantum/light_ws2812.c **** #define w3_nops  0
+ 246:quantum/light_ws2812.c **** #endif
+ 247:quantum/light_ws2812.c **** 
+ 248:quantum/light_ws2812.c **** #define w_nop1  "nop      \n\t"
+ 249:quantum/light_ws2812.c **** #define w_nop2  "rjmp .+0 \n\t"
+ 250:quantum/light_ws2812.c **** #define w_nop4  w_nop2 w_nop2
+ 251:quantum/light_ws2812.c **** #define w_nop8  w_nop4 w_nop4
+ 252:quantum/light_ws2812.c **** #define w_nop16 w_nop8 w_nop8
+ 253:quantum/light_ws2812.c **** 
+ 254:quantum/light_ws2812.c **** void inline ws2812_sendarray_mask(uint8_t *data,uint16_t datlen,uint8_t maskhi)
+ 255:quantum/light_ws2812.c **** {
+  17               		.loc 1 255 1 view -0
+  18               		.cfi_startproc
+  19               	/* prologue: function */
+  20               	/* frame size = 0 */
+  21               	/* stack size = 0 */
+  22               	.L__stack_usage = 0
+  23               		.loc 1 255 1 is_stmt 0 view .LVU1
+  24 0000 9C01      		movw r18,r24
+  25 0002 CB01      		movw r24,r22
+  26               	.LVL1:
+ 256:quantum/light_ws2812.c ****   uint8_t curbyte,ctr,masklo;
+  27               		.loc 1 256 3 is_stmt 1 view .LVU2
+ 257:quantum/light_ws2812.c ****   uint8_t sreg_prev;
+  28               		.loc 1 257 3 view .LVU3
+ 258:quantum/light_ws2812.c **** 
+ 259:quantum/light_ws2812.c ****   // masklo  =~maskhi&ws2812_PORTREG;
+ 260:quantum/light_ws2812.c ****   // maskhi |=        ws2812_PORTREG;
+ 261:quantum/light_ws2812.c ****   masklo  =~maskhi&_SFR_IO8((RGB_DI_PIN >> 4) + 2);
+  29               		.loc 1 261 3 view .LVU4
+  30               		.loc 1 261 20 is_stmt 0 view .LVU5
+  31 0004 65B1      		in r22,0x5
+  32               	.LVL2:
+  33               		.loc 1 261 19 view .LVU6
+  34 0006 542F      		mov r21,r20
+  35 0008 5095      		com r21
+  36 000a 5623      		and r21,r22
+  37               	.LVL3:
+ 262:quantum/light_ws2812.c ****   maskhi |=        _SFR_IO8((RGB_DI_PIN >> 4) + 2);
+  38               		.loc 1 262 3 is_stmt 1 view .LVU7
+  39               		.loc 1 262 20 is_stmt 0 view .LVU8
+  40 000c 65B1      		in r22,0x5
+  41               		.loc 1 262 10 view .LVU9
+  42 000e 462B      		or r20,r22
+  43               	.LVL4:
+ 263:quantum/light_ws2812.c ****   sreg_prev=SREG;
+  44               		.loc 1 263 3 is_stmt 1 view .LVU10
+  45               		.loc 1 263 12 is_stmt 0 view .LVU11
+  46 0010 6FB7      		in r22,__SREG__
+  47               	.LVL5:
+ 264:quantum/light_ws2812.c ****   cli();
+  48               		.loc 1 264 3 is_stmt 1 view .LVU12
+  49               	/* #APP */
+  50               	 ;  264 "quantum/light_ws2812.c" 1
+  51 0012 F894      		cli
+  52               	 ;  0 "" 2
+ 265:quantum/light_ws2812.c **** 
+ 266:quantum/light_ws2812.c ****   while (datlen--) {
+  53               		.loc 1 266 3 view .LVU13
+  54               	/* #NOAPP */
+  55 0014 820F      		add r24,r18
+  56 0016 931F      		adc r25,r19
+  57               	.LVL6:
+  58               	.L2:
+  59               		.loc 1 266 9 view .LVU14
+  60               		.loc 1 266 9 is_stmt 0 view .LVU15
+  61 0018 2817      		cp r18,r24
+  62 001a 3907      		cpc r19,r25
+  63 001c 01F4      		brne .L3
+ 267:quantum/light_ws2812.c ****     curbyte=(*data++);
+ 268:quantum/light_ws2812.c **** 
+ 269:quantum/light_ws2812.c ****     asm volatile(
+ 270:quantum/light_ws2812.c ****     "       ldi   %0,8  \n\t"
+ 271:quantum/light_ws2812.c ****     "loop%=:            \n\t"
+ 272:quantum/light_ws2812.c ****     "       out   %2,%3 \n\t"    //  '1' [01] '0' [01] - re
+ 273:quantum/light_ws2812.c **** #if (w1_nops&1)
+ 274:quantum/light_ws2812.c **** w_nop1
+ 275:quantum/light_ws2812.c **** #endif
+ 276:quantum/light_ws2812.c **** #if (w1_nops&2)
+ 277:quantum/light_ws2812.c **** w_nop2
+ 278:quantum/light_ws2812.c **** #endif
+ 279:quantum/light_ws2812.c **** #if (w1_nops&4)
+ 280:quantum/light_ws2812.c **** w_nop4
+ 281:quantum/light_ws2812.c **** #endif
+ 282:quantum/light_ws2812.c **** #if (w1_nops&8)
+ 283:quantum/light_ws2812.c **** w_nop8
+ 284:quantum/light_ws2812.c **** #endif
+ 285:quantum/light_ws2812.c **** #if (w1_nops&16)
+ 286:quantum/light_ws2812.c **** w_nop16
+ 287:quantum/light_ws2812.c **** #endif
+ 288:quantum/light_ws2812.c ****     "       sbrs  %1,7  \n\t"    //  '1' [03] '0' [02]
+ 289:quantum/light_ws2812.c ****     "       out   %2,%4 \n\t"    //  '1' [--] '0' [03] - fe-low
+ 290:quantum/light_ws2812.c ****     "       lsl   %1    \n\t"    //  '1' [04] '0' [04]
+ 291:quantum/light_ws2812.c **** #if (w2_nops&1)
+ 292:quantum/light_ws2812.c ****   w_nop1
+ 293:quantum/light_ws2812.c **** #endif
+ 294:quantum/light_ws2812.c **** #if (w2_nops&2)
+ 295:quantum/light_ws2812.c ****   w_nop2
+ 296:quantum/light_ws2812.c **** #endif
+ 297:quantum/light_ws2812.c **** #if (w2_nops&4)
+ 298:quantum/light_ws2812.c ****   w_nop4
+ 299:quantum/light_ws2812.c **** #endif
+ 300:quantum/light_ws2812.c **** #if (w2_nops&8)
+ 301:quantum/light_ws2812.c ****   w_nop8
+ 302:quantum/light_ws2812.c **** #endif
+ 303:quantum/light_ws2812.c **** #if (w2_nops&16)
+ 304:quantum/light_ws2812.c ****   w_nop16
+ 305:quantum/light_ws2812.c **** #endif
+ 306:quantum/light_ws2812.c ****     "       out   %2,%4 \n\t"    //  '1' [+1] '0' [+1] - fe-high
+ 307:quantum/light_ws2812.c **** #if (w3_nops&1)
+ 308:quantum/light_ws2812.c **** w_nop1
+ 309:quantum/light_ws2812.c **** #endif
+ 310:quantum/light_ws2812.c **** #if (w3_nops&2)
+ 311:quantum/light_ws2812.c **** w_nop2
+ 312:quantum/light_ws2812.c **** #endif
+ 313:quantum/light_ws2812.c **** #if (w3_nops&4)
+ 314:quantum/light_ws2812.c **** w_nop4
+ 315:quantum/light_ws2812.c **** #endif
+ 316:quantum/light_ws2812.c **** #if (w3_nops&8)
+ 317:quantum/light_ws2812.c **** w_nop8
+ 318:quantum/light_ws2812.c **** #endif
+ 319:quantum/light_ws2812.c **** #if (w3_nops&16)
+ 320:quantum/light_ws2812.c **** w_nop16
+ 321:quantum/light_ws2812.c **** #endif
+ 322:quantum/light_ws2812.c **** 
+ 323:quantum/light_ws2812.c ****     "       dec   %0    \n\t"    //  '1' [+2] '0' [+2]
+ 324:quantum/light_ws2812.c ****     "       brne  loop%=\n\t"    //  '1' [+3] '0' [+4]
+ 325:quantum/light_ws2812.c ****     :	"=&d" (ctr)
+ 326:quantum/light_ws2812.c ****     :	"r" (curbyte), "I" (_SFR_IO_ADDR(_SFR_IO8((RGB_DI_PIN >> 4) + 2))), "r" (maskhi), "r" (masklo
+ 327:quantum/light_ws2812.c ****     );
+ 328:quantum/light_ws2812.c ****   }
+ 329:quantum/light_ws2812.c **** 
+ 330:quantum/light_ws2812.c ****   SREG=sreg_prev;
+  64               		.loc 1 330 3 is_stmt 1 view .LVU16
+  65               		.loc 1 330 7 is_stmt 0 view .LVU17
+  66 001e 6FBF      		out __SREG__,r22
+  67               	/* epilogue start */
+ 331:quantum/light_ws2812.c **** }
+  68               		.loc 1 331 1 view .LVU18
+  69 0020 0895      		ret
+  70               	.L3:
+ 267:quantum/light_ws2812.c ****     curbyte=(*data++);
+  71               		.loc 1 267 5 is_stmt 1 view .LVU19
+  72               	.LVL7:
+ 269:quantum/light_ws2812.c ****     "       ldi   %0,8  \n\t"
+  73               		.loc 1 269 5 view .LVU20
+  74 0022 F901      		movw r30,r18
+  75 0024 7191      		ld r23,Z+
+  76               	.LVL8:
+ 269:quantum/light_ws2812.c ****     "       ldi   %0,8  \n\t"
+  77               		.loc 1 269 5 is_stmt 0 view .LVU21
+  78 0026 9F01      		movw r18,r30
+  79               	.LVL9:
+ 269:quantum/light_ws2812.c ****     "       ldi   %0,8  \n\t"
+  80               		.loc 1 269 5 view .LVU22
+  81               	/* #APP */
+  82               	 ;  269 "quantum/light_ws2812.c" 1
+  83 0028 E8E0      		       ldi   r30,8  
+  84               		loop62:            
+  85 002a 45B9      		       out   5,r20 
+  86 002c 0000      		nop      
+  87 002e 00C0      		rjmp .+0 
+  88 0030 77FF      		       sbrs  r23,7  
+  89 0032 55B9      		       out   5,r21 
+  90 0034 770F      		       lsl   r23    
+  91 0036 0000      		nop      
+  92 0038 00C0      		rjmp .+0 
+  93 003a 00C0      		rjmp .+0 
+  94 003c 00C0      		rjmp .+0 
+  95 003e 55B9      		       out   5,r21 
+  96 0040 00C0      		rjmp .+0 
+  97 0042 EA95      		       dec   r30    
+  98 0044 01F4      		       brne  loop62
+  99               		
+ 100               	 ;  0 "" 2
+ 101               	.LVL10:
+ 269:quantum/light_ws2812.c ****     "       ldi   %0,8  \n\t"
+ 102               		.loc 1 269 5 view .LVU23
+ 103               	/* #NOAPP */
+ 104 0046 00C0      		rjmp .L2
+ 105               		.cfi_endproc
+ 106               	.LFE10:
+ 108               		.section	.text.ws2812_setleds_pin,"ax",@progbits
+ 109               	.global	ws2812_setleds_pin
+ 111               	ws2812_setleds_pin:
+ 112               	.LVL11:
+ 113               	.LFB7:
+ 141:quantum/light_ws2812.c ****   // ws2812_DDRREG |= pinmask; // Enable DDR
+ 114               		.loc 1 141 1 is_stmt 1 view -0
+ 115               		.cfi_startproc
+ 116               	/* prologue: function */
+ 117               	/* frame size = 0 */
+ 118               	/* stack size = 0 */
+ 119               	.L__stack_usage = 0
+ 141:quantum/light_ws2812.c ****   // ws2812_DDRREG |= pinmask; // Enable DDR
+ 120               		.loc 1 141 1 is_stmt 0 view .LVU25
+ 121 0000 FC01      		movw r30,r24
+ 144:quantum/light_ws2812.c **** 
+ 122               		.loc 1 144 3 is_stmt 1 view .LVU26
+ 144:quantum/light_ws2812.c **** 
+ 123               		.loc 1 144 35 is_stmt 0 view .LVU27
+ 124 0002 94B1      		in r25,0x4
+ 125 0004 942B      		or r25,r20
+ 126 0006 94B9      		out 0x4,r25
+ 146:quantum/light_ws2812.c ****   _delay_us(50);
+ 127               		.loc 1 146 3 is_stmt 1 view .LVU28
+ 128 0008 9B01      		movw r18,r22
+ 129 000a 220F      		lsl r18
+ 130 000c 331F      		rol r19
+ 131               	.LVL12:
+ 146:quantum/light_ws2812.c ****   _delay_us(50);
+ 132               		.loc 1 146 3 is_stmt 0 view .LVU29
+ 133 000e 620F      		add r22,r18
+ 134 0010 731F      		adc r23,r19
+ 135               	.LVL13:
+ 146:quantum/light_ws2812.c ****   _delay_us(50);
+ 136               		.loc 1 146 3 view .LVU30
+ 137 0012 CF01      		movw r24,r30
+ 138 0014 0E94 0000 		call ws2812_sendarray_mask
+ 139               	.LVL14:
+ 147:quantum/light_ws2812.c **** }
+ 140               		.loc 1 147 3 is_stmt 1 view .LVU31
+ 141               	.LBB6:
+ 142               	.LBI6:
+ 143               		.file 2 "/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/util/delay.h"
+   1:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/util/delay.h **** /* Copyright (c) 2002, Marek Michalkiewicz
+   2:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/util/delay.h ****    Copyright (c) 2004,2005,2007 Joerg Wunsch
+   3:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/util/delay.h ****    Copyright (c) 2007  Florin-Viorel Petrov
+   4:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/util/delay.h ****    All rights reserved.
+   5:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/util/delay.h **** 
+   6:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/util/delay.h ****    Redistribution and use in source and binary forms, with or without
+   7:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/util/delay.h ****    modification, are permitted provided that the following conditions are met:
+   8:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/util/delay.h **** 
+   9:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/util/delay.h ****    * Redistributions of source code must retain the above copyright
+  10:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/util/delay.h ****      notice, this list of conditions and the following disclaimer.
+  11:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/util/delay.h **** 
+  12:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/util/delay.h ****    * Redistributions in binary form must reproduce the above copyright
+  13:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/util/delay.h ****      notice, this list of conditions and the following disclaimer in
+  14:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/util/delay.h ****      the documentation and/or other materials provided with the
+  15:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/util/delay.h ****      distribution.
+  16:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/util/delay.h **** 
+  17:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/util/delay.h ****    * Neither the name of the copyright holders nor the names of
+  18:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/util/delay.h ****      contributors may be used to endorse or promote products derived
+  19:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/util/delay.h ****      from this software without specific prior written permission.
+  20:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/util/delay.h **** 
+  21:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/util/delay.h ****   THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+  22:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/util/delay.h ****   AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+  23:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/util/delay.h ****   IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+  24:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/util/delay.h ****   ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
+  25:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/util/delay.h ****   LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+  26:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/util/delay.h ****   CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+  27:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/util/delay.h ****   SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+  28:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/util/delay.h ****   INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+  29:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/util/delay.h ****   CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+  30:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/util/delay.h ****   ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+  31:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/util/delay.h ****   POSSIBILITY OF SUCH DAMAGE. */
+  32:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/util/delay.h **** 
+  33:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/util/delay.h **** /* $Id: delay.h.in 2506 2016-02-08 10:05:45Z joerg_wunsch $ */
+  34:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/util/delay.h **** 
+  35:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/util/delay.h **** #ifndef _UTIL_DELAY_H_
+  36:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/util/delay.h **** #define _UTIL_DELAY_H_ 1
+  37:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/util/delay.h **** 
+  38:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/util/delay.h **** #ifndef __DOXYGEN__
+  39:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/util/delay.h **** #  ifndef __HAS_DELAY_CYCLES
+  40:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/util/delay.h **** #    define __HAS_DELAY_CYCLES 1
+  41:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/util/delay.h **** #  endif
+  42:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/util/delay.h **** #endif  /* __DOXYGEN__ */
+  43:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/util/delay.h **** 
+  44:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/util/delay.h **** #include <inttypes.h>
+  45:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/util/delay.h **** #include <util/delay_basic.h>
+  46:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/util/delay.h **** #include <math.h>
+  47:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/util/delay.h **** 
+  48:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/util/delay.h **** /** \file */
+  49:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/util/delay.h **** /** \defgroup util_delay <util/delay.h>: Convenience functions for busy-wait delay loops
+  50:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/util/delay.h ****     \code
+  51:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/util/delay.h ****     #define F_CPU 1000000UL  // 1 MHz
+  52:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/util/delay.h ****     //#define F_CPU 14.7456E6
+  53:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/util/delay.h ****     #include <util/delay.h>
+  54:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/util/delay.h ****     \endcode
+  55:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/util/delay.h **** 
+  56:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/util/delay.h ****     \note As an alternative method, it is possible to pass the
+  57:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/util/delay.h ****     F_CPU macro down to the compiler from the Makefile.
+  58:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/util/delay.h ****     Obviously, in that case, no \c \#define statement should be
+  59:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/util/delay.h ****     used.
+  60:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/util/delay.h **** 
+  61:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/util/delay.h ****     The functions in this header file are wrappers around the basic
+  62:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/util/delay.h ****     busy-wait functions from <util/delay_basic.h>.  They are meant as
+  63:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/util/delay.h ****     convenience functions where actual time values can be specified
+  64:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/util/delay.h ****     rather than a number of cycles to wait for.  The idea behind is
+  65:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/util/delay.h ****     that compile-time constant expressions will be eliminated by
+  66:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/util/delay.h ****     compiler optimization so floating-point expressions can be used
+  67:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/util/delay.h ****     to calculate the number of delay cycles needed based on the CPU
+  68:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/util/delay.h ****     frequency passed by the macro F_CPU.
+  69:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/util/delay.h **** 
+  70:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/util/delay.h ****     \note In order for these functions to work as intended, compiler
+  71:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/util/delay.h ****     optimizations <em>must</em> be enabled, and the delay time
+  72:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/util/delay.h ****     <em>must</em> be an expression that is a known constant at
+  73:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/util/delay.h ****     compile-time.  If these requirements are not met, the resulting
+  74:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/util/delay.h ****     delay will be much longer (and basically unpredictable), and
+  75:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/util/delay.h ****     applications that otherwise do not use floating-point calculations
+  76:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/util/delay.h ****     will experience severe code bloat by the floating-point library
+  77:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/util/delay.h ****     routines linked into the application.
+  78:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/util/delay.h **** 
+  79:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/util/delay.h ****     The functions available allow the specification of microsecond, and
+  80:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/util/delay.h ****     millisecond delays directly, using the application-supplied macro
+  81:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/util/delay.h ****     F_CPU as the CPU clock frequency (in Hertz).
+  82:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/util/delay.h **** 
+  83:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/util/delay.h **** */
+  84:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/util/delay.h **** 
+  85:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/util/delay.h **** #if !defined(__DOXYGEN__)
+  86:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/util/delay.h **** static __inline__ void _delay_us(double __us) __attribute__((__always_inline__));
+  87:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/util/delay.h **** static __inline__ void _delay_ms(double __ms) __attribute__((__always_inline__));
+  88:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/util/delay.h **** #endif
+  89:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/util/delay.h **** 
+  90:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/util/delay.h **** #ifndef F_CPU
+  91:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/util/delay.h **** /* prevent compiler error by supplying a default */
+  92:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/util/delay.h **** # warning "F_CPU not defined for <util/delay.h>"
+  93:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/util/delay.h **** /** \ingroup util_delay
+  94:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/util/delay.h ****     \def F_CPU
+  95:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/util/delay.h ****     \brief CPU frequency in Hz
+  96:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/util/delay.h **** 
+  97:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/util/delay.h ****     The macro F_CPU specifies the CPU frequency to be considered by
+  98:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/util/delay.h ****     the delay macros.  This macro is normally supplied by the
+  99:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/util/delay.h ****     environment (e.g. from within a project header, or the project's
+ 100:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/util/delay.h ****     Makefile).  The value 1 MHz here is only provided as a "vanilla"
+ 101:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/util/delay.h ****     fallback if no such user-provided definition could be found.
+ 102:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/util/delay.h **** 
+ 103:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/util/delay.h ****     In terms of the delay functions, the CPU frequency can be given as
+ 104:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/util/delay.h ****     a floating-point constant (e.g. 3.6864E6 for 3.6864 MHz).
+ 105:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/util/delay.h ****     However, the macros in <util/setbaud.h> require it to be an
+ 106:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/util/delay.h ****     integer value.
+ 107:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/util/delay.h ****  */
+ 108:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/util/delay.h **** # define F_CPU 1000000UL
+ 109:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/util/delay.h **** #endif
+ 110:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/util/delay.h **** 
+ 111:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/util/delay.h **** #ifndef __OPTIMIZE__
+ 112:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/util/delay.h **** # warning "Compiler optimizations disabled; functions from <util/delay.h> won't work as designed"
+ 113:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/util/delay.h **** #endif
+ 114:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/util/delay.h **** 
+ 115:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/util/delay.h **** #if __HAS_DELAY_CYCLES && defined(__OPTIMIZE__) && \
+ 116:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/util/delay.h ****   !defined(__DELAY_BACKWARD_COMPATIBLE__) &&	   \
+ 117:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/util/delay.h ****   __STDC_HOSTED__
+ 118:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/util/delay.h **** #  include <math.h>
+ 119:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/util/delay.h **** #endif
+ 120:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/util/delay.h **** 
+ 121:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/util/delay.h **** /**
+ 122:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/util/delay.h ****    \ingroup util_delay
+ 123:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/util/delay.h **** 
+ 124:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/util/delay.h ****    Perform a delay of \c __ms milliseconds, using _delay_loop_2().
+ 125:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/util/delay.h **** 
+ 126:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/util/delay.h ****    The macro F_CPU is supposed to be defined to a
+ 127:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/util/delay.h ****    constant defining the CPU clock frequency (in Hertz).
+ 128:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/util/delay.h **** 
+ 129:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/util/delay.h ****    The maximal possible delay is 262.14 ms / F_CPU in MHz.
+ 130:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/util/delay.h **** 
+ 131:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/util/delay.h ****    When the user request delay which exceed the maximum possible one,
+ 132:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/util/delay.h ****    _delay_ms() provides a decreased resolution functionality. In this
+ 133:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/util/delay.h ****    mode _delay_ms() will work with a resolution of 1/10 ms, providing
+ 134:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/util/delay.h ****    delays up to 6.5535 seconds (independent from CPU frequency).  The
+ 135:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/util/delay.h ****    user will not be informed about decreased resolution.
+ 136:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/util/delay.h **** 
+ 137:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/util/delay.h ****    If the avr-gcc toolchain has __builtin_avr_delay_cycles()
+ 138:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/util/delay.h ****    support, maximal possible delay is 4294967.295 ms/ F_CPU in MHz. For
+ 139:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/util/delay.h ****    values greater than the maximal possible delay, overflows results in
+ 140:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/util/delay.h ****    no delay i.e., 0ms.
+ 141:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/util/delay.h **** 
+ 142:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/util/delay.h ****    Conversion of \c __ms into clock cycles may not always result in
+ 143:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/util/delay.h ****    integer.  By default, the clock cycles rounded up to next
+ 144:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/util/delay.h ****    integer. This ensures that the user gets at least \c __ms
+ 145:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/util/delay.h ****    microseconds of delay.
+ 146:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/util/delay.h **** 
+ 147:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/util/delay.h ****    Alternatively, by defining the macro \c __DELAY_ROUND_DOWN__, or
+ 148:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/util/delay.h ****    \c __DELAY_ROUND_CLOSEST__, before including this header file, the
+ 149:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/util/delay.h ****    algorithm can be made to round down, or round to closest integer,
+ 150:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/util/delay.h ****    respectively.
+ 151:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/util/delay.h **** 
+ 152:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/util/delay.h ****    \note
+ 153:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/util/delay.h **** 
+ 154:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/util/delay.h ****    The implementation of _delay_ms() based on
+ 155:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/util/delay.h ****    __builtin_avr_delay_cycles() is not backward compatible with older
+ 156:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/util/delay.h ****    implementations.  In order to get functionality backward compatible
+ 157:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/util/delay.h ****    with previous versions, the macro \c "__DELAY_BACKWARD_COMPATIBLE__"
+ 158:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/util/delay.h ****    must be defined before including this header file. Also, the
+ 159:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/util/delay.h ****    backward compatible algorithm will be chosen if the code is
+ 160:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/util/delay.h ****    compiled in a <em>freestanding environment</em> (GCC option
+ 161:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/util/delay.h ****    \c -ffreestanding), as the math functions required for rounding are
+ 162:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/util/delay.h ****    not available to the compiler then.
+ 163:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/util/delay.h **** 
+ 164:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/util/delay.h ****  */
+ 165:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/util/delay.h **** void
+ 166:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/util/delay.h **** _delay_ms(double __ms)
+ 167:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/util/delay.h **** {
+ 168:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/util/delay.h **** 	double __tmp ;
+ 169:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/util/delay.h **** #if __HAS_DELAY_CYCLES && defined(__OPTIMIZE__) && \
+ 170:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/util/delay.h ****   !defined(__DELAY_BACKWARD_COMPATIBLE__) &&	   \
+ 171:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/util/delay.h ****   __STDC_HOSTED__
+ 172:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/util/delay.h **** 	uint32_t __ticks_dc;
+ 173:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/util/delay.h **** 	extern void __builtin_avr_delay_cycles(unsigned long);
+ 174:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/util/delay.h **** 	__tmp = ((F_CPU) / 1e3) * __ms;
+ 175:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/util/delay.h **** 
+ 176:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/util/delay.h **** 	#if defined(__DELAY_ROUND_DOWN__)
+ 177:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/util/delay.h **** 		__ticks_dc = (uint32_t)fabs(__tmp);
+ 178:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/util/delay.h **** 
+ 179:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/util/delay.h **** 	#elif defined(__DELAY_ROUND_CLOSEST__)
+ 180:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/util/delay.h **** 		__ticks_dc = (uint32_t)(fabs(__tmp)+0.5);
+ 181:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/util/delay.h **** 
+ 182:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/util/delay.h **** 	#else
+ 183:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/util/delay.h **** 		//round up by default
+ 184:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/util/delay.h **** 		__ticks_dc = (uint32_t)(ceil(fabs(__tmp)));
+ 185:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/util/delay.h **** 	#endif
+ 186:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/util/delay.h **** 
+ 187:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/util/delay.h **** 	__builtin_avr_delay_cycles(__ticks_dc);
+ 188:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/util/delay.h **** 
+ 189:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/util/delay.h **** #else
+ 190:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/util/delay.h **** 	uint16_t __ticks;
+ 191:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/util/delay.h **** 	__tmp = ((F_CPU) / 4e3) * __ms;
+ 192:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/util/delay.h **** 	if (__tmp < 1.0)
+ 193:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/util/delay.h **** 		__ticks = 1;
+ 194:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/util/delay.h **** 	else if (__tmp > 65535)
+ 195:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/util/delay.h **** 	{
+ 196:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/util/delay.h **** 		//	__ticks = requested delay in 1/10 ms
+ 197:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/util/delay.h **** 		__ticks = (uint16_t) (__ms * 10.0);
+ 198:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/util/delay.h **** 		while(__ticks)
+ 199:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/util/delay.h **** 		{
+ 200:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/util/delay.h **** 			// wait 1/10 ms
+ 201:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/util/delay.h **** 			_delay_loop_2(((F_CPU) / 4e3) / 10);
+ 202:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/util/delay.h **** 			__ticks --;
+ 203:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/util/delay.h **** 		}
+ 204:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/util/delay.h **** 		return;
+ 205:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/util/delay.h **** 	}
+ 206:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/util/delay.h **** 	else
+ 207:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/util/delay.h **** 		__ticks = (uint16_t)__tmp;
+ 208:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/util/delay.h **** 	_delay_loop_2(__ticks);
+ 209:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/util/delay.h **** #endif
+ 210:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/util/delay.h **** }
+ 211:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/util/delay.h **** 
+ 212:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/util/delay.h **** /**
+ 213:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/util/delay.h ****    \ingroup util_delay
+ 214:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/util/delay.h **** 
+ 215:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/util/delay.h ****    Perform a delay of \c __us microseconds, using _delay_loop_1().
+ 216:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/util/delay.h **** 
+ 217:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/util/delay.h ****    The macro F_CPU is supposed to be defined to a
+ 218:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/util/delay.h ****    constant defining the CPU clock frequency (in Hertz).
+ 219:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/util/delay.h **** 
+ 220:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/util/delay.h ****    The maximal possible delay is 768 us / F_CPU in MHz.
+ 221:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/util/delay.h **** 
+ 222:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/util/delay.h ****    If the user requests a delay greater than the maximal possible one,
+ 223:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/util/delay.h ****    _delay_us() will automatically call _delay_ms() instead.  The user
+ 224:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/util/delay.h ****    will not be informed about this case.
+ 225:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/util/delay.h **** 
+ 226:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/util/delay.h ****    If the avr-gcc toolchain has __builtin_avr_delay_cycles()
+ 227:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/util/delay.h ****    support, maximal possible delay is 4294967.295 us/ F_CPU in MHz. For
+ 228:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/util/delay.h ****    values greater than the maximal possible delay, overflow results in
+ 229:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/util/delay.h ****    no delay i.e., 0us.
+ 230:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/util/delay.h **** 
+ 231:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/util/delay.h ****    Conversion of \c __us into clock cycles may not always result in
+ 232:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/util/delay.h ****    integer.  By default, the clock cycles rounded up to next
+ 233:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/util/delay.h ****    integer. This ensures that the user gets at least \c __us
+ 234:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/util/delay.h ****    microseconds of delay.
+ 235:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/util/delay.h **** 
+ 236:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/util/delay.h ****    Alternatively, by defining the macro \c __DELAY_ROUND_DOWN__, or
+ 237:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/util/delay.h ****    \c __DELAY_ROUND_CLOSEST__, before including this header file, the
+ 238:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/util/delay.h ****    algorithm can be made to round down, or round to closest integer,
+ 239:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/util/delay.h ****    respectively.
+ 240:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/util/delay.h **** 
+ 241:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/util/delay.h ****    \note
+ 242:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/util/delay.h **** 
+ 243:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/util/delay.h ****    The implementation of _delay_ms() based on
+ 244:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/util/delay.h ****    __builtin_avr_delay_cycles() is not backward compatible with older
+ 245:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/util/delay.h ****    implementations.  In order to get functionality backward compatible
+ 246:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/util/delay.h ****    with previous versions, the macro \c __DELAY_BACKWARD_COMPATIBLE__
+ 247:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/util/delay.h ****    must be defined before including this header file. Also, the
+ 248:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/util/delay.h ****    backward compatible algorithm will be chosen if the code is
+ 249:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/util/delay.h ****    compiled in a <em>freestanding environment</em> (GCC option
+ 250:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/util/delay.h ****    \c -ffreestanding), as the math functions required for rounding are
+ 251:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/util/delay.h ****    not available to the compiler then.
+ 252:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/util/delay.h **** 
+ 253:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/util/delay.h ****  */
+ 254:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/util/delay.h **** void
+ 255:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/util/delay.h **** _delay_us(double __us)
+ 144               		.loc 2 255 1 view .LVU32
+ 145               	.LBB7:
+ 256:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/util/delay.h **** {
+ 257:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/util/delay.h **** 	double __tmp ;
+ 146               		.loc 2 257 2 view .LVU33
+ 258:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/util/delay.h **** #if __HAS_DELAY_CYCLES && defined(__OPTIMIZE__) && \
+ 259:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/util/delay.h ****   !defined(__DELAY_BACKWARD_COMPATIBLE__) &&	   \
+ 260:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/util/delay.h ****   __STDC_HOSTED__
+ 261:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/util/delay.h **** 	uint32_t __ticks_dc;
+ 147               		.loc 2 261 2 view .LVU34
+ 262:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/util/delay.h **** 	extern void __builtin_avr_delay_cycles(unsigned long);
+ 148               		.loc 2 262 2 view .LVU35
+ 263:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/util/delay.h **** 	__tmp = ((F_CPU) / 1e6) * __us;
+ 149               		.loc 2 263 2 view .LVU36
+ 264:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/util/delay.h **** 
+ 265:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/util/delay.h **** 	#if defined(__DELAY_ROUND_DOWN__)
+ 266:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/util/delay.h **** 		__ticks_dc = (uint32_t)fabs(__tmp);
+ 267:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/util/delay.h **** 
+ 268:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/util/delay.h **** 	#elif defined(__DELAY_ROUND_CLOSEST__)
+ 269:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/util/delay.h **** 		__ticks_dc = (uint32_t)(fabs(__tmp)+0.5);
+ 270:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/util/delay.h **** 
+ 271:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/util/delay.h **** 	#else
+ 272:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/util/delay.h **** 		//round up by default
+ 273:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/util/delay.h **** 		__ticks_dc = (uint32_t)(ceil(fabs(__tmp)));
+ 150               		.loc 2 273 3 view .LVU37
+ 274:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/util/delay.h **** 	#endif
+ 275:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/util/delay.h **** 
+ 276:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/util/delay.h **** 	__builtin_avr_delay_cycles(__ticks_dc);
+ 151               		.loc 2 276 2 view .LVU38
+ 152 0018 87EC      		ldi r24,lo8(199)
+ 153 001a 90E0      		ldi r25,hi8(199)
+ 154 001c 0197      	1:	sbiw r24,1
+ 155 001e 01F4      		brne 1b
+ 156 0020 00C0      		rjmp .
+ 157 0022 0000      		nop
+ 158               	.LVL15:
+ 159               	/* epilogue start */
+ 160               		.loc 2 276 2 is_stmt 0 view .LVU39
+ 161               	.LBE7:
+ 162               	.LBE6:
+ 148:quantum/light_ws2812.c **** 
+ 163               		.loc 1 148 1 view .LVU40
+ 164 0024 0895      		ret
+ 165               		.cfi_endproc
+ 166               	.LFE7:
+ 168               		.section	.text.ws2812_setleds,"ax",@progbits
+ 169               	.global	ws2812_setleds
+ 171               	ws2812_setleds:
+ 172               	.LVL16:
+ 173               	.LFB6:
+ 135:quantum/light_ws2812.c ****    // ws2812_setleds_pin(ledarray,leds, _BV(ws2812_pin));
+ 174               		.loc 1 135 1 is_stmt 1 view -0
+ 175               		.cfi_startproc
+ 176               	/* prologue: function */
+ 177               	/* frame size = 0 */
+ 178               	/* stack size = 0 */
+ 179               	.L__stack_usage = 0
+ 137:quantum/light_ws2812.c **** }
+ 180               		.loc 1 137 4 view .LVU42
+ 181 0000 42E0      		ldi r20,lo8(2)
+ 182 0002 0C94 0000 		jmp ws2812_setleds_pin
+ 183               	.LVL17:
+ 137:quantum/light_ws2812.c **** }
+ 184               		.loc 1 137 4 is_stmt 0 view .LVU43
+ 185               		.cfi_endproc
+ 186               	.LFE6:
+ 188               		.section	.text.ws2812_setleds_rgbw,"ax",@progbits
+ 189               	.global	ws2812_setleds_rgbw
+ 191               	ws2812_setleds_rgbw:
+ 192               	.LVL18:
+ 193               	.LFB8:
+ 152:quantum/light_ws2812.c **** 
+ 194               		.loc 1 152 1 is_stmt 1 view -0
+ 195               		.cfi_startproc
+ 196               	/* prologue: function */
+ 197               	/* frame size = 0 */
+ 198               	/* stack size = 0 */
+ 199               	.L__stack_usage = 0
+ 178:quantum/light_ws2812.c **** 
+ 200               		.loc 1 178 3 view .LVU45
+ 178:quantum/light_ws2812.c **** 
+ 201               		.loc 1 178 35 is_stmt 0 view .LVU46
+ 202 0000 219A      		sbi 0x4,1
+ 180:quantum/light_ws2812.c **** 
+ 203               		.loc 1 180 3 is_stmt 1 view .LVU47
+ 204 0002 660F      		lsl r22
+ 205 0004 771F      		rol r23
+ 206 0006 660F      		lsl r22
+ 207 0008 771F      		rol r23
+ 208               	.LVL19:
+ 180:quantum/light_ws2812.c **** 
+ 209               		.loc 1 180 3 is_stmt 0 view .LVU48
+ 210 000a 42E0      		ldi r20,lo8(2)
+ 211 000c 0E94 0000 		call ws2812_sendarray_mask
+ 212               	.LVL20:
+ 184:quantum/light_ws2812.c ****   #endif
+ 213               		.loc 1 184 5 is_stmt 1 view .LVU49
+ 214               	.LBB8:
+ 215               	.LBI8:
+ 255:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/util/delay.h **** {
+ 216               		.loc 2 255 1 view .LVU50
+ 217               	.LBB9:
+ 257:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/util/delay.h **** #if __HAS_DELAY_CYCLES && defined(__OPTIMIZE__) && \
+ 218               		.loc 2 257 2 view .LVU51
+ 261:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/util/delay.h **** 	extern void __builtin_avr_delay_cycles(unsigned long);
+ 219               		.loc 2 261 2 view .LVU52
+ 262:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/util/delay.h **** 	__tmp = ((F_CPU) / 1e6) * __us;
+ 220               		.loc 2 262 2 view .LVU53
+ 263:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/util/delay.h **** 
+ 221               		.loc 2 263 2 view .LVU54
+ 273:/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/util/delay.h **** 	#endif
+ 222               		.loc 2 273 3 view .LVU55
+ 223               		.loc 2 276 2 view .LVU56
+ 224 0010 8FE3      		ldi r24,lo8(319)
+ 225 0012 91E0      		ldi r25,hi8(319)
+ 226 0014 0197      	1:	sbiw r24,1
+ 227 0016 01F4      		brne 1b
+ 228 0018 00C0      		rjmp .
+ 229 001a 0000      		nop
+ 230               	.LVL21:
+ 231               	/* epilogue start */
+ 232               		.loc 2 276 2 is_stmt 0 view .LVU57
+ 233               	.LBE9:
+ 234               	.LBE8:
+ 186:quantum/light_ws2812.c **** 
+ 235               		.loc 1 186 1 view .LVU58
+ 236 001c 0895      		ret
+ 237               		.cfi_endproc
+ 238               	.LFE8:
+ 240               		.section	.text.ws2812_sendarray,"ax",@progbits
+ 241               	.global	ws2812_sendarray
+ 243               	ws2812_sendarray:
+ 244               	.LVL22:
+ 245               	.LFB9:
+ 189:quantum/light_ws2812.c ****   ws2812_sendarray_mask(data,datlen,_BV(RGB_DI_PIN & 0xF));
+ 246               		.loc 1 189 1 is_stmt 1 view -0
+ 247               		.cfi_startproc
+ 248               	/* prologue: function */
+ 249               	/* frame size = 0 */
+ 250               	/* stack size = 0 */
+ 251               	.L__stack_usage = 0
+ 190:quantum/light_ws2812.c **** }
+ 252               		.loc 1 190 3 view .LVU60
+ 253 0000 42E0      		ldi r20,lo8(2)
+ 254 0002 0C94 0000 		jmp ws2812_sendarray_mask
+ 255               	.LVL23:
+ 190:quantum/light_ws2812.c **** }
+ 256               		.loc 1 190 3 is_stmt 0 view .LVU61
+ 257               		.cfi_endproc
+ 258               	.LFE9:
+ 260               		.text
+ 261               	.Letext0:
+ 262               		.file 3 "/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/stdint.h"
+ 263               		.file 4 "quantum/light_ws2812.h"
+ 264               		.file 5 "./tmk_core/common/debug.h"
+DEFINED SYMBOLS
+                            *ABS*:0000000000000000 light_ws2812.c
+/var/folders/0z/ym_gdwfd5tg7m49f_1nfh8300000gn/T//ccBKxA8K.s:2      *ABS*:000000000000003e __SP_H__
+/var/folders/0z/ym_gdwfd5tg7m49f_1nfh8300000gn/T//ccBKxA8K.s:3      *ABS*:000000000000003d __SP_L__
+/var/folders/0z/ym_gdwfd5tg7m49f_1nfh8300000gn/T//ccBKxA8K.s:4      *ABS*:000000000000003f __SREG__
+/var/folders/0z/ym_gdwfd5tg7m49f_1nfh8300000gn/T//ccBKxA8K.s:5      *ABS*:0000000000000000 __tmp_reg__
+/var/folders/0z/ym_gdwfd5tg7m49f_1nfh8300000gn/T//ccBKxA8K.s:6      *ABS*:0000000000000001 __zero_reg__
+/var/folders/0z/ym_gdwfd5tg7m49f_1nfh8300000gn/T//ccBKxA8K.s:13     .text.ws2812_sendarray_mask:0000000000000000 ws2812_sendarray_mask
+/var/folders/0z/ym_gdwfd5tg7m49f_1nfh8300000gn/T//ccBKxA8K.s:84     .text.ws2812_sendarray_mask:000000000000002a loop62
+/var/folders/0z/ym_gdwfd5tg7m49f_1nfh8300000gn/T//ccBKxA8K.s:111    .text.ws2812_setleds_pin:0000000000000000 ws2812_setleds_pin
+/var/folders/0z/ym_gdwfd5tg7m49f_1nfh8300000gn/T//ccBKxA8K.s:171    .text.ws2812_setleds:0000000000000000 ws2812_setleds
+/var/folders/0z/ym_gdwfd5tg7m49f_1nfh8300000gn/T//ccBKxA8K.s:191    .text.ws2812_setleds_rgbw:0000000000000000 ws2812_setleds_rgbw
+/var/folders/0z/ym_gdwfd5tg7m49f_1nfh8300000gn/T//ccBKxA8K.s:243    .text.ws2812_sendarray:0000000000000000 ws2812_sendarray
+
+NO UNDEFINED SYMBOLS

@@ -1,0 +1,993 @@
+   1               		.file	"process_tap_dance.c"
+   2               	__SP_H__ = 0x3e
+   3               	__SP_L__ = 0x3d
+   4               	__SREG__ = 0x3f
+   5               	__tmp_reg__ = 0
+   6               	__zero_reg__ = 1
+   7               		.text
+   8               	.Ltext0:
+   9               		.cfi_sections	.debug_frame
+  10               		.section	.text.process_tap_dance_action_on_dance_finished,"ax",@progbits
+  12               	process_tap_dance_action_on_dance_finished:
+  13               	.LVL0:
+  14               	.LFB111:
+  15               		.file 1 "quantum/process_keycode/process_tap_dance.c"
+   1:quantum/process_keycode/process_tap_dance.c **** #include "quantum.h"
+   2:quantum/process_keycode/process_tap_dance.c **** #include "action_tapping.h"
+   3:quantum/process_keycode/process_tap_dance.c **** 
+   4:quantum/process_keycode/process_tap_dance.c **** static uint16_t last_td;
+   5:quantum/process_keycode/process_tap_dance.c **** static int8_t highest_td = -1;
+   6:quantum/process_keycode/process_tap_dance.c **** 
+   7:quantum/process_keycode/process_tap_dance.c **** void qk_tap_dance_pair_finished (qk_tap_dance_state_t *state, void *user_data) {
+   8:quantum/process_keycode/process_tap_dance.c ****   qk_tap_dance_pair_t *pair = (qk_tap_dance_pair_t *)user_data;
+   9:quantum/process_keycode/process_tap_dance.c **** 
+  10:quantum/process_keycode/process_tap_dance.c ****   if (state->count == 1) {
+  11:quantum/process_keycode/process_tap_dance.c ****     register_code16 (pair->kc1);
+  12:quantum/process_keycode/process_tap_dance.c ****   } else if (state->count == 2) {
+  13:quantum/process_keycode/process_tap_dance.c ****     register_code16 (pair->kc2);
+  14:quantum/process_keycode/process_tap_dance.c ****   }
+  15:quantum/process_keycode/process_tap_dance.c **** }
+  16:quantum/process_keycode/process_tap_dance.c **** 
+  17:quantum/process_keycode/process_tap_dance.c **** void qk_tap_dance_pair_reset (qk_tap_dance_state_t *state, void *user_data) {
+  18:quantum/process_keycode/process_tap_dance.c ****   qk_tap_dance_pair_t *pair = (qk_tap_dance_pair_t *)user_data;
+  19:quantum/process_keycode/process_tap_dance.c **** 
+  20:quantum/process_keycode/process_tap_dance.c ****   if (state->count == 1) {
+  21:quantum/process_keycode/process_tap_dance.c ****     unregister_code16 (pair->kc1);
+  22:quantum/process_keycode/process_tap_dance.c ****   } else if (state->count == 2) {
+  23:quantum/process_keycode/process_tap_dance.c ****     unregister_code16 (pair->kc2);
+  24:quantum/process_keycode/process_tap_dance.c ****   }
+  25:quantum/process_keycode/process_tap_dance.c **** }
+  26:quantum/process_keycode/process_tap_dance.c **** 
+  27:quantum/process_keycode/process_tap_dance.c **** static inline void _process_tap_dance_action_fn (qk_tap_dance_state_t *state,
+  28:quantum/process_keycode/process_tap_dance.c ****                                                  void *user_data,
+  29:quantum/process_keycode/process_tap_dance.c ****                                                  qk_tap_dance_user_fn_t fn)
+  30:quantum/process_keycode/process_tap_dance.c **** {
+  31:quantum/process_keycode/process_tap_dance.c ****   if (fn) {
+  32:quantum/process_keycode/process_tap_dance.c ****     fn(state, user_data);
+  33:quantum/process_keycode/process_tap_dance.c ****   }
+  34:quantum/process_keycode/process_tap_dance.c **** }
+  35:quantum/process_keycode/process_tap_dance.c **** 
+  36:quantum/process_keycode/process_tap_dance.c **** static inline void process_tap_dance_action_on_each_tap (qk_tap_dance_action_t *action)
+  37:quantum/process_keycode/process_tap_dance.c **** {
+  38:quantum/process_keycode/process_tap_dance.c ****   _process_tap_dance_action_fn (&action->state, action->user_data, action->fn.on_each_tap);
+  39:quantum/process_keycode/process_tap_dance.c **** }
+  40:quantum/process_keycode/process_tap_dance.c **** 
+  41:quantum/process_keycode/process_tap_dance.c **** static inline void process_tap_dance_action_on_dance_finished (qk_tap_dance_action_t *action)
+  42:quantum/process_keycode/process_tap_dance.c **** {
+  16               		.loc 1 42 1 view -0
+  17               		.cfi_startproc
+  18               	/* prologue: function */
+  19               	/* frame size = 0 */
+  20               	/* stack size = 0 */
+  21               	.L__stack_usage = 0
+  22               		.loc 1 42 1 is_stmt 0 view .LVU1
+  23 0000 DC01      		movw r26,r24
+  43:quantum/process_keycode/process_tap_dance.c ****   if (action->state.finished)
+  24               		.loc 1 43 3 is_stmt 1 view .LVU2
+  25               		.loc 1 43 6 is_stmt 0 view .LVU3
+  26 0002 1D96      		adiw r26,13
+  27 0004 8C91      		ld r24,X
+  28 0006 1D97      		sbiw r26,13
+  29               	.LVL1:
+  30               		.loc 1 43 6 view .LVU4
+  31 0008 8111      		cpse r24,__zero_reg__
+  32 000a 00C0      		rjmp .L1
+  33               	.LVL2:
+  34               	.LBB6:
+  35               	.LBI6:
+  41:quantum/process_keycode/process_tap_dance.c **** {
+  36               		.loc 1 41 20 is_stmt 1 view .LVU5
+  37               	.LBB7:
+  44:quantum/process_keycode/process_tap_dance.c ****     return;
+  45:quantum/process_keycode/process_tap_dance.c ****   action->state.finished = true;
+  38               		.loc 1 45 3 view .LVU6
+  39               		.loc 1 45 26 is_stmt 0 view .LVU7
+  40 000c 81E0      		ldi r24,lo8(1)
+  41 000e 1D96      		adiw r26,13
+  42 0010 8C93      		st X,r24
+  43 0012 1D97      		sbiw r26,13
+  46:quantum/process_keycode/process_tap_dance.c ****   _process_tap_dance_action_fn (&action->state, action->user_data, action->fn.on_dance_finished);
+  44               		.loc 1 46 3 is_stmt 1 view .LVU8
+  45 0014 1296      		adiw r26,2
+  46 0016 ED91      		ld r30,X+
+  47 0018 FC91      		ld r31,X
+  48 001a 1397      		sbiw r26,2+1
+  49               	.LVL3:
+  50               	.LBB8:
+  51               	.LBI8:
+  27:quantum/process_keycode/process_tap_dance.c ****                                                  void *user_data,
+  52               		.loc 1 27 20 view .LVU9
+  53               	.LBB9:
+  31:quantum/process_keycode/process_tap_dance.c ****     fn(state, user_data);
+  54               		.loc 1 31 3 view .LVU10
+  31:quantum/process_keycode/process_tap_dance.c ****     fn(state, user_data);
+  55               		.loc 1 31 6 is_stmt 0 view .LVU11
+  56 001c 3097      		sbiw r30,0
+  57 001e 01F0      		breq .L1
+  32:quantum/process_keycode/process_tap_dance.c ****   }
+  58               		.loc 1 32 5 is_stmt 1 view .LVU12
+  59 0020 1E96      		adiw r26,14
+  60 0022 6D91      		ld r22,X+
+  61 0024 7C91      		ld r23,X
+  62 0026 1F97      		sbiw r26,14+1
+  63 0028 CD01      		movw r24,r26
+  64 002a 0696      		adiw r24,6
+  65               	.LVL4:
+  32:quantum/process_keycode/process_tap_dance.c ****   }
+  66               		.loc 1 32 5 is_stmt 0 view .LVU13
+  67 002c 0994      		ijmp
+  68               	.LVL5:
+  69               	.L1:
+  70               	/* epilogue start */
+  32:quantum/process_keycode/process_tap_dance.c ****   }
+  71               		.loc 1 32 5 view .LVU14
+  72               	.LBE9:
+  73               	.LBE8:
+  74               	.LBE7:
+  75               	.LBE6:
+  47:quantum/process_keycode/process_tap_dance.c **** }
+  76               		.loc 1 47 1 view .LVU15
+  77 002e 0895      		ret
+  78               		.cfi_endproc
+  79               	.LFE111:
+  81               		.section	.text.qk_tap_dance_pair_finished,"ax",@progbits
+  82               	.global	qk_tap_dance_pair_finished
+  84               	qk_tap_dance_pair_finished:
+  85               	.LVL6:
+  86               	.LFB107:
+   7:quantum/process_keycode/process_tap_dance.c ****   qk_tap_dance_pair_t *pair = (qk_tap_dance_pair_t *)user_data;
+  87               		.loc 1 7 80 is_stmt 1 view -0
+  88               		.cfi_startproc
+  89               	/* prologue: function */
+  90               	/* frame size = 0 */
+  91               	/* stack size = 0 */
+  92               	.L__stack_usage = 0
+   7:quantum/process_keycode/process_tap_dance.c ****   qk_tap_dance_pair_t *pair = (qk_tap_dance_pair_t *)user_data;
+  93               		.loc 1 7 80 is_stmt 0 view .LVU17
+  94 0000 FB01      		movw r30,r22
+   8:quantum/process_keycode/process_tap_dance.c **** 
+  95               		.loc 1 8 3 is_stmt 1 view .LVU18
+  96               	.LVL7:
+  10:quantum/process_keycode/process_tap_dance.c ****     register_code16 (pair->kc1);
+  97               		.loc 1 10 3 view .LVU19
+  10:quantum/process_keycode/process_tap_dance.c ****     register_code16 (pair->kc1);
+  98               		.loc 1 10 12 is_stmt 0 view .LVU20
+  99 0002 DC01      		movw r26,r24
+ 100 0004 8C91      		ld r24,X
+ 101               	.LVL8:
+  10:quantum/process_keycode/process_tap_dance.c ****     register_code16 (pair->kc1);
+ 102               		.loc 1 10 6 view .LVU21
+ 103 0006 8130      		cpi r24,lo8(1)
+ 104 0008 01F4      		brne .L9
+  11:quantum/process_keycode/process_tap_dance.c ****   } else if (state->count == 2) {
+ 105               		.loc 1 11 5 is_stmt 1 view .LVU22
+ 106 000a 8081      		ld r24,Z
+ 107 000c 9181      		ldd r25,Z+1
+ 108               	.L11:
+  13:quantum/process_keycode/process_tap_dance.c ****   }
+ 109               		.loc 1 13 5 is_stmt 0 view .LVU23
+ 110 000e 0C94 0000 		jmp register_code16
+ 111               	.LVL9:
+ 112               	.L9:
+  12:quantum/process_keycode/process_tap_dance.c ****     register_code16 (pair->kc2);
+ 113               		.loc 1 12 10 is_stmt 1 view .LVU24
+  12:quantum/process_keycode/process_tap_dance.c ****     register_code16 (pair->kc2);
+ 114               		.loc 1 12 13 is_stmt 0 view .LVU25
+ 115 0012 8230      		cpi r24,lo8(2)
+ 116 0014 01F4      		brne .L8
+  13:quantum/process_keycode/process_tap_dance.c ****   }
+ 117               		.loc 1 13 5 is_stmt 1 view .LVU26
+ 118 0016 8281      		ldd r24,Z+2
+ 119 0018 9381      		ldd r25,Z+3
+ 120 001a 00C0      		rjmp .L11
+ 121               	.L8:
+ 122               	/* epilogue start */
+  15:quantum/process_keycode/process_tap_dance.c **** 
+ 123               		.loc 1 15 1 is_stmt 0 view .LVU27
+ 124 001c 0895      		ret
+ 125               		.cfi_endproc
+ 126               	.LFE107:
+ 128               		.section	.text.qk_tap_dance_pair_reset,"ax",@progbits
+ 129               	.global	qk_tap_dance_pair_reset
+ 131               	qk_tap_dance_pair_reset:
+ 132               	.LVL10:
+ 133               	.LFB108:
+  17:quantum/process_keycode/process_tap_dance.c ****   qk_tap_dance_pair_t *pair = (qk_tap_dance_pair_t *)user_data;
+ 134               		.loc 1 17 77 is_stmt 1 view -0
+ 135               		.cfi_startproc
+ 136               	/* prologue: function */
+ 137               	/* frame size = 0 */
+ 138               	/* stack size = 0 */
+ 139               	.L__stack_usage = 0
+  17:quantum/process_keycode/process_tap_dance.c ****   qk_tap_dance_pair_t *pair = (qk_tap_dance_pair_t *)user_data;
+ 140               		.loc 1 17 77 is_stmt 0 view .LVU29
+ 141 0000 FB01      		movw r30,r22
+  18:quantum/process_keycode/process_tap_dance.c **** 
+ 142               		.loc 1 18 3 is_stmt 1 view .LVU30
+ 143               	.LVL11:
+  20:quantum/process_keycode/process_tap_dance.c ****     unregister_code16 (pair->kc1);
+ 144               		.loc 1 20 3 view .LVU31
+  20:quantum/process_keycode/process_tap_dance.c ****     unregister_code16 (pair->kc1);
+ 145               		.loc 1 20 12 is_stmt 0 view .LVU32
+ 146 0002 DC01      		movw r26,r24
+ 147 0004 8C91      		ld r24,X
+ 148               	.LVL12:
+  20:quantum/process_keycode/process_tap_dance.c ****     unregister_code16 (pair->kc1);
+ 149               		.loc 1 20 6 view .LVU33
+ 150 0006 8130      		cpi r24,lo8(1)
+ 151 0008 01F4      		brne .L13
+  21:quantum/process_keycode/process_tap_dance.c ****   } else if (state->count == 2) {
+ 152               		.loc 1 21 5 is_stmt 1 view .LVU34
+ 153 000a 8081      		ld r24,Z
+ 154 000c 9181      		ldd r25,Z+1
+ 155               	.L15:
+  23:quantum/process_keycode/process_tap_dance.c ****   }
+ 156               		.loc 1 23 5 is_stmt 0 view .LVU35
+ 157 000e 0C94 0000 		jmp unregister_code16
+ 158               	.LVL13:
+ 159               	.L13:
+  22:quantum/process_keycode/process_tap_dance.c ****     unregister_code16 (pair->kc2);
+ 160               		.loc 1 22 10 is_stmt 1 view .LVU36
+  22:quantum/process_keycode/process_tap_dance.c ****     unregister_code16 (pair->kc2);
+ 161               		.loc 1 22 13 is_stmt 0 view .LVU37
+ 162 0012 8230      		cpi r24,lo8(2)
+ 163 0014 01F4      		brne .L12
+  23:quantum/process_keycode/process_tap_dance.c ****   }
+ 164               		.loc 1 23 5 is_stmt 1 view .LVU38
+ 165 0016 8281      		ldd r24,Z+2
+ 166 0018 9381      		ldd r25,Z+3
+ 167 001a 00C0      		rjmp .L15
+ 168               	.L12:
+ 169               	/* epilogue start */
+  25:quantum/process_keycode/process_tap_dance.c **** 
+ 170               		.loc 1 25 1 is_stmt 0 view .LVU39
+ 171 001c 0895      		ret
+ 172               		.cfi_endproc
+ 173               	.LFE108:
+ 175               		.section	.text.reset_tap_dance,"ax",@progbits
+ 176               	.global	reset_tap_dance
+ 178               	reset_tap_dance:
+ 179               	.LVL14:
+ 180               	.LFB115:
+  48:quantum/process_keycode/process_tap_dance.c **** 
+  49:quantum/process_keycode/process_tap_dance.c **** static inline void process_tap_dance_action_on_reset (qk_tap_dance_action_t *action)
+  50:quantum/process_keycode/process_tap_dance.c **** {
+  51:quantum/process_keycode/process_tap_dance.c ****   _process_tap_dance_action_fn (&action->state, action->user_data, action->fn.on_reset);
+  52:quantum/process_keycode/process_tap_dance.c **** }
+  53:quantum/process_keycode/process_tap_dance.c **** 
+  54:quantum/process_keycode/process_tap_dance.c **** bool process_tap_dance(uint16_t keycode, keyrecord_t *record) {
+  55:quantum/process_keycode/process_tap_dance.c ****   uint16_t idx = keycode - QK_TAP_DANCE;
+  56:quantum/process_keycode/process_tap_dance.c ****   qk_tap_dance_action_t *action;
+  57:quantum/process_keycode/process_tap_dance.c **** 
+  58:quantum/process_keycode/process_tap_dance.c ****   if (last_td && last_td != keycode) {
+  59:quantum/process_keycode/process_tap_dance.c ****     (&tap_dance_actions[last_td - QK_TAP_DANCE])->state.interrupted = true;
+  60:quantum/process_keycode/process_tap_dance.c ****   }
+  61:quantum/process_keycode/process_tap_dance.c **** 
+  62:quantum/process_keycode/process_tap_dance.c ****   switch(keycode) {
+  63:quantum/process_keycode/process_tap_dance.c ****   case QK_TAP_DANCE ... QK_TAP_DANCE_MAX:
+  64:quantum/process_keycode/process_tap_dance.c ****     if ((int16_t)idx > highest_td)
+  65:quantum/process_keycode/process_tap_dance.c ****       highest_td = idx;
+  66:quantum/process_keycode/process_tap_dance.c ****     action = &tap_dance_actions[idx];
+  67:quantum/process_keycode/process_tap_dance.c **** 
+  68:quantum/process_keycode/process_tap_dance.c ****     action->state.pressed = record->event.pressed;
+  69:quantum/process_keycode/process_tap_dance.c ****     if (record->event.pressed) {
+  70:quantum/process_keycode/process_tap_dance.c ****       action->state.keycode = keycode;
+  71:quantum/process_keycode/process_tap_dance.c ****       action->state.count++;
+  72:quantum/process_keycode/process_tap_dance.c ****       action->state.timer = timer_read();
+  73:quantum/process_keycode/process_tap_dance.c ****       process_tap_dance_action_on_each_tap (action);
+  74:quantum/process_keycode/process_tap_dance.c **** 
+  75:quantum/process_keycode/process_tap_dance.c ****       if (last_td && last_td != keycode) {
+  76:quantum/process_keycode/process_tap_dance.c ****         qk_tap_dance_action_t *paction = &tap_dance_actions[last_td - QK_TAP_DANCE];
+  77:quantum/process_keycode/process_tap_dance.c ****         paction->state.interrupted = true;
+  78:quantum/process_keycode/process_tap_dance.c ****         process_tap_dance_action_on_dance_finished (paction);
+  79:quantum/process_keycode/process_tap_dance.c ****         reset_tap_dance (&paction->state);
+  80:quantum/process_keycode/process_tap_dance.c ****       }
+  81:quantum/process_keycode/process_tap_dance.c **** 
+  82:quantum/process_keycode/process_tap_dance.c ****       last_td = keycode;
+  83:quantum/process_keycode/process_tap_dance.c ****     }
+  84:quantum/process_keycode/process_tap_dance.c **** 
+  85:quantum/process_keycode/process_tap_dance.c ****     break;
+  86:quantum/process_keycode/process_tap_dance.c **** 
+  87:quantum/process_keycode/process_tap_dance.c ****   default:
+  88:quantum/process_keycode/process_tap_dance.c ****     if (!record->event.pressed)
+  89:quantum/process_keycode/process_tap_dance.c ****       return true;
+  90:quantum/process_keycode/process_tap_dance.c **** 
+  91:quantum/process_keycode/process_tap_dance.c ****     if (highest_td == -1)
+  92:quantum/process_keycode/process_tap_dance.c ****       return true;
+  93:quantum/process_keycode/process_tap_dance.c **** 
+  94:quantum/process_keycode/process_tap_dance.c ****     for (int i = 0; i <= highest_td; i++) {
+  95:quantum/process_keycode/process_tap_dance.c ****       action = &tap_dance_actions[i];
+  96:quantum/process_keycode/process_tap_dance.c ****       if (action->state.count == 0)
+  97:quantum/process_keycode/process_tap_dance.c ****         continue;
+  98:quantum/process_keycode/process_tap_dance.c ****       action->state.interrupted = true;
+  99:quantum/process_keycode/process_tap_dance.c ****       process_tap_dance_action_on_dance_finished (action);
+ 100:quantum/process_keycode/process_tap_dance.c ****       reset_tap_dance (&action->state);
+ 101:quantum/process_keycode/process_tap_dance.c ****     }
+ 102:quantum/process_keycode/process_tap_dance.c ****     break;
+ 103:quantum/process_keycode/process_tap_dance.c ****   }
+ 104:quantum/process_keycode/process_tap_dance.c **** 
+ 105:quantum/process_keycode/process_tap_dance.c ****   return true;
+ 106:quantum/process_keycode/process_tap_dance.c **** }
+ 107:quantum/process_keycode/process_tap_dance.c **** 
+ 108:quantum/process_keycode/process_tap_dance.c **** void matrix_scan_tap_dance () {
+ 109:quantum/process_keycode/process_tap_dance.c ****   if (highest_td == -1)
+ 110:quantum/process_keycode/process_tap_dance.c ****     return;
+ 111:quantum/process_keycode/process_tap_dance.c **** 
+ 112:quantum/process_keycode/process_tap_dance.c ****   for (int i = 0; i <= highest_td; i++) {
+ 113:quantum/process_keycode/process_tap_dance.c ****     qk_tap_dance_action_t *action = &tap_dance_actions[i];
+ 114:quantum/process_keycode/process_tap_dance.c **** 
+ 115:quantum/process_keycode/process_tap_dance.c ****     if (action->state.count && timer_elapsed (action->state.timer) > TAPPING_TERM) {
+ 116:quantum/process_keycode/process_tap_dance.c ****       process_tap_dance_action_on_dance_finished (action);
+ 117:quantum/process_keycode/process_tap_dance.c ****       reset_tap_dance (&action->state);
+ 118:quantum/process_keycode/process_tap_dance.c ****     }
+ 119:quantum/process_keycode/process_tap_dance.c ****   }
+ 120:quantum/process_keycode/process_tap_dance.c **** }
+ 121:quantum/process_keycode/process_tap_dance.c **** 
+ 122:quantum/process_keycode/process_tap_dance.c **** void reset_tap_dance (qk_tap_dance_state_t *state) {
+ 181               		.loc 1 122 52 is_stmt 1 view -0
+ 182               		.cfi_startproc
+ 183               		.loc 1 122 52 is_stmt 0 view .LVU41
+ 184 0000 CF93      		push r28
+ 185               	.LCFI0:
+ 186               		.cfi_def_cfa_offset 3
+ 187               		.cfi_offset 28, -2
+ 188 0002 DF93      		push r29
+ 189               	.LCFI1:
+ 190               		.cfi_def_cfa_offset 4
+ 191               		.cfi_offset 29, -3
+ 192               	/* prologue: function */
+ 193               	/* frame size = 0 */
+ 194               	/* stack size = 2 */
+ 195               	.L__stack_usage = 2
+ 196 0004 EC01      		movw r28,r24
+ 123:quantum/process_keycode/process_tap_dance.c ****   qk_tap_dance_action_t *action;
+ 197               		.loc 1 123 3 is_stmt 1 view .LVU42
+ 124:quantum/process_keycode/process_tap_dance.c **** 
+ 125:quantum/process_keycode/process_tap_dance.c ****   if (state->pressed)
+ 198               		.loc 1 125 3 view .LVU43
+ 199               		.loc 1 125 6 is_stmt 0 view .LVU44
+ 200 0006 8E81      		ldd r24,Y+6
+ 201               	.LVL15:
+ 202               		.loc 1 125 6 view .LVU45
+ 203 0008 8111      		cpse r24,__zero_reg__
+ 204 000a 00C0      		rjmp .L16
+ 126:quantum/process_keycode/process_tap_dance.c ****     return;
+ 127:quantum/process_keycode/process_tap_dance.c **** 
+ 128:quantum/process_keycode/process_tap_dance.c ****   action = &tap_dance_actions[state->keycode - QK_TAP_DANCE];
+ 205               		.loc 1 128 3 is_stmt 1 view .LVU46
+ 206               		.loc 1 128 46 is_stmt 0 view .LVU47
+ 207 000c 8981      		ldd r24,Y+1
+ 208 000e 9A81      		ldd r25,Y+2
+ 209 0010 9157      		subi r25,113
+ 210               	.LVL16:
+ 129:quantum/process_keycode/process_tap_dance.c **** 
+ 130:quantum/process_keycode/process_tap_dance.c ****   process_tap_dance_action_on_reset (action);
+ 211               		.loc 1 130 3 is_stmt 1 view .LVU48
+ 212               	.LBB14:
+ 213               	.LBI14:
+  49:quantum/process_keycode/process_tap_dance.c **** {
+ 214               		.loc 1 49 20 view .LVU49
+ 215               	.LBB15:
+  51:quantum/process_keycode/process_tap_dance.c **** }
+ 216               		.loc 1 51 3 view .LVU50
+ 217 0012 24E0      		ldi r18,4
+ 218               		1:
+ 219 0014 880F      		lsl r24
+ 220 0016 991F      		rol r25
+ 221 0018 2A95      		dec r18
+ 222 001a 01F4      		brne 1b
+ 223               	.LVL17:
+  51:quantum/process_keycode/process_tap_dance.c **** }
+ 224               		.loc 1 51 3 is_stmt 0 view .LVU51
+ 225 001c DC01      		movw r26,r24
+ 226 001e A050      		subi r26,lo8(-(tap_dance_actions))
+ 227 0020 B040      		sbci r27,hi8(-(tap_dance_actions))
+ 228               	.LVL18:
+  51:quantum/process_keycode/process_tap_dance.c **** }
+ 229               		.loc 1 51 3 view .LVU52
+ 230 0022 1496      		adiw r26,4
+ 231 0024 ED91      		ld r30,X+
+ 232 0026 FC91      		ld r31,X
+ 233 0028 1597      		sbiw r26,4+1
+ 234               	.LVL19:
+ 235               	.LBB16:
+ 236               	.LBI16:
+  27:quantum/process_keycode/process_tap_dance.c ****                                                  void *user_data,
+ 237               		.loc 1 27 20 is_stmt 1 view .LVU53
+ 238               	.LBB17:
+  31:quantum/process_keycode/process_tap_dance.c ****     fn(state, user_data);
+ 239               		.loc 1 31 3 view .LVU54
+  31:quantum/process_keycode/process_tap_dance.c ****     fn(state, user_data);
+ 240               		.loc 1 31 6 is_stmt 0 view .LVU55
+ 241 002a 3097      		sbiw r30,0
+ 242 002c 01F0      		breq .L18
+  32:quantum/process_keycode/process_tap_dance.c ****   }
+ 243               		.loc 1 32 5 is_stmt 1 view .LVU56
+ 244 002e 1E96      		adiw r26,14
+ 245 0030 6D91      		ld r22,X+
+ 246 0032 7C91      		ld r23,X
+ 247 0034 8050      		subi r24,lo8(-(tap_dance_actions+6))
+ 248 0036 9040      		sbci r25,hi8(-(tap_dance_actions+6))
+ 249 0038 0995      		icall
+ 250               	.LVL20:
+ 251               	.L18:
+  32:quantum/process_keycode/process_tap_dance.c ****   }
+ 252               		.loc 1 32 5 is_stmt 0 view .LVU57
+ 253               	.LBE17:
+ 254               	.LBE16:
+ 255               	.LBE15:
+ 256               	.LBE14:
+ 131:quantum/process_keycode/process_tap_dance.c **** 
+ 132:quantum/process_keycode/process_tap_dance.c ****   state->count = 0;
+ 257               		.loc 1 132 3 is_stmt 1 view .LVU58
+ 258               		.loc 1 132 16 is_stmt 0 view .LVU59
+ 259 003a 1882      		st Y,__zero_reg__
+ 133:quantum/process_keycode/process_tap_dance.c ****   state->interrupted = false;
+ 260               		.loc 1 133 3 is_stmt 1 view .LVU60
+ 261               		.loc 1 133 22 is_stmt 0 view .LVU61
+ 262 003c 1D82      		std Y+5,__zero_reg__
+ 134:quantum/process_keycode/process_tap_dance.c ****   state->finished = false;
+ 263               		.loc 1 134 3 is_stmt 1 view .LVU62
+ 264               		.loc 1 134 19 is_stmt 0 view .LVU63
+ 265 003e 1F82      		std Y+7,__zero_reg__
+ 135:quantum/process_keycode/process_tap_dance.c ****   last_td = 0;
+ 266               		.loc 1 135 3 is_stmt 1 view .LVU64
+ 267               		.loc 1 135 11 is_stmt 0 view .LVU65
+ 268 0040 1092 0000 		sts last_td+1,__zero_reg__
+ 269 0044 1092 0000 		sts last_td,__zero_reg__
+ 270               	.L16:
+ 271               	/* epilogue start */
+ 136:quantum/process_keycode/process_tap_dance.c **** }
+ 272               		.loc 1 136 1 view .LVU66
+ 273 0048 DF91      		pop r29
+ 274 004a CF91      		pop r28
+ 275               	.LVL21:
+ 276               		.loc 1 136 1 view .LVU67
+ 277 004c 0895      		ret
+ 278               		.cfi_endproc
+ 279               	.LFE115:
+ 281               		.section	.text.process_tap_dance,"ax",@progbits
+ 282               	.global	process_tap_dance
+ 284               	process_tap_dance:
+ 285               	.LVL22:
+ 286               	.LFB113:
+  54:quantum/process_keycode/process_tap_dance.c ****   uint16_t idx = keycode - QK_TAP_DANCE;
+ 287               		.loc 1 54 63 is_stmt 1 view -0
+ 288               		.cfi_startproc
+  54:quantum/process_keycode/process_tap_dance.c ****   uint16_t idx = keycode - QK_TAP_DANCE;
+ 289               		.loc 1 54 63 is_stmt 0 view .LVU69
+ 290 0000 EF92      		push r14
+ 291               	.LCFI2:
+ 292               		.cfi_def_cfa_offset 3
+ 293               		.cfi_offset 14, -2
+ 294 0002 FF92      		push r15
+ 295               	.LCFI3:
+ 296               		.cfi_def_cfa_offset 4
+ 297               		.cfi_offset 15, -3
+ 298 0004 0F93      		push r16
+ 299               	.LCFI4:
+ 300               		.cfi_def_cfa_offset 5
+ 301               		.cfi_offset 16, -4
+ 302 0006 1F93      		push r17
+ 303               	.LCFI5:
+ 304               		.cfi_def_cfa_offset 6
+ 305               		.cfi_offset 17, -5
+ 306 0008 CF93      		push r28
+ 307               	.LCFI6:
+ 308               		.cfi_def_cfa_offset 7
+ 309               		.cfi_offset 28, -6
+ 310 000a DF93      		push r29
+ 311               	.LCFI7:
+ 312               		.cfi_def_cfa_offset 8
+ 313               		.cfi_offset 29, -7
+ 314               	/* prologue: function */
+ 315               	/* frame size = 0 */
+ 316               	/* stack size = 6 */
+ 317               	.L__stack_usage = 6
+ 318 000c 8C01      		movw r16,r24
+ 319 000e DB01      		movw r26,r22
+  55:quantum/process_keycode/process_tap_dance.c ****   qk_tap_dance_action_t *action;
+ 320               		.loc 1 55 3 is_stmt 1 view .LVU70
+  55:quantum/process_keycode/process_tap_dance.c ****   qk_tap_dance_action_t *action;
+ 321               		.loc 1 55 12 is_stmt 0 view .LVU71
+ 322 0010 9157      		subi r25,113
+ 323               	.LVL23:
+  56:quantum/process_keycode/process_tap_dance.c **** 
+ 324               		.loc 1 56 3 is_stmt 1 view .LVU72
+  58:quantum/process_keycode/process_tap_dance.c ****     (&tap_dance_actions[last_td - QK_TAP_DANCE])->state.interrupted = true;
+ 325               		.loc 1 58 3 view .LVU73
+  58:quantum/process_keycode/process_tap_dance.c ****     (&tap_dance_actions[last_td - QK_TAP_DANCE])->state.interrupted = true;
+ 326               		.loc 1 58 7 is_stmt 0 view .LVU74
+ 327 0012 2091 0000 		lds r18,last_td
+ 328 0016 3091 0000 		lds r19,last_td+1
+  58:quantum/process_keycode/process_tap_dance.c ****     (&tap_dance_actions[last_td - QK_TAP_DANCE])->state.interrupted = true;
+ 329               		.loc 1 58 6 view .LVU75
+ 330 001a 2115      		cp r18,__zero_reg__
+ 331 001c 3105      		cpc r19,__zero_reg__
+ 332 001e 01F0      		breq .L23
+  58:quantum/process_keycode/process_tap_dance.c ****     (&tap_dance_actions[last_td - QK_TAP_DANCE])->state.interrupted = true;
+ 333               		.loc 1 58 15 discriminator 1 view .LVU76
+ 334 0020 2017      		cp r18,r16
+ 335 0022 3107      		cpc r19,r17
+ 336 0024 01F0      		breq .L23
+  59:quantum/process_keycode/process_tap_dance.c ****   }
+ 337               		.loc 1 59 5 is_stmt 1 view .LVU77
+  59:quantum/process_keycode/process_tap_dance.c ****   }
+ 338               		.loc 1 59 69 is_stmt 0 view .LVU78
+ 339 0026 44E0      		ldi r20,4
+ 340               		1:
+ 341 0028 220F      		lsl r18
+ 342 002a 331F      		rol r19
+ 343 002c 4A95      		dec r20
+ 344 002e 01F4      		brne 1b
+ 345 0030 F901      		movw r30,r18
+ 346 0032 E050      		subi r30,lo8(-(tap_dance_actions-4096))
+ 347 0034 F040      		sbci r31,hi8(-(tap_dance_actions-4096))
+ 348 0036 21E0      		ldi r18,lo8(1)
+ 349 0038 2387      		std Z+11,r18
+ 350               	.L23:
+  62:quantum/process_keycode/process_tap_dance.c ****   case QK_TAP_DANCE ... QK_TAP_DANCE_MAX:
+ 351               		.loc 1 62 3 is_stmt 1 view .LVU79
+ 352 003a 1296      		adiw r26,2
+ 353 003c 4C91      		ld r20,X
+ 354 003e 1297      		sbiw r26,2
+ 355 0040 8F3F      		cpi r24,-1
+ 356 0042 9105      		cpc r25,__zero_reg__
+ 357 0044 01F0      		breq .+4
+ 358 0046 00F0      		brlo .+2
+ 359 0048 00C0      		rjmp .L24
+  64:quantum/process_keycode/process_tap_dance.c ****       highest_td = idx;
+ 360               		.loc 1 64 5 view .LVU80
+  64:quantum/process_keycode/process_tap_dance.c ****       highest_td = idx;
+ 361               		.loc 1 64 22 is_stmt 0 view .LVU81
+ 362 004a 2091 0000 		lds r18,highest_td
+ 363 004e 022E      		mov __tmp_reg__,r18
+ 364 0050 000C      		lsl r0
+ 365 0052 330B      		sbc r19,r19
+  64:quantum/process_keycode/process_tap_dance.c ****       highest_td = idx;
+ 366               		.loc 1 64 8 view .LVU82
+ 367 0054 2817      		cp r18,r24
+ 368 0056 3907      		cpc r19,r25
+ 369 0058 04F4      		brge .L25
+  65:quantum/process_keycode/process_tap_dance.c ****     action = &tap_dance_actions[idx];
+ 370               		.loc 1 65 7 is_stmt 1 view .LVU83
+  65:quantum/process_keycode/process_tap_dance.c ****     action = &tap_dance_actions[idx];
+ 371               		.loc 1 65 18 is_stmt 0 view .LVU84
+ 372 005a 8093 0000 		sts highest_td,r24
+ 373               	.L25:
+  66:quantum/process_keycode/process_tap_dance.c **** 
+ 374               		.loc 1 66 5 is_stmt 1 view .LVU85
+ 375               	.LVL24:
+  68:quantum/process_keycode/process_tap_dance.c ****     if (record->event.pressed) {
+ 376               		.loc 1 68 5 view .LVU86
+  68:quantum/process_keycode/process_tap_dance.c ****     if (record->event.pressed) {
+ 377               		.loc 1 68 27 is_stmt 0 view .LVU87
+ 378 005e 7C01      		movw r14,r24
+ 379 0060 94E0      		ldi r25,4
+ 380               		1:
+ 381 0062 EE0C      		lsl r14
+ 382 0064 FF1C      		rol r15
+ 383 0066 9A95      		dec r25
+ 384 0068 01F4      		brne 1b
+ 385 006a E701      		movw r28,r14
+ 386 006c C050      		subi r28,lo8(-(tap_dance_actions))
+ 387 006e D040      		sbci r29,hi8(-(tap_dance_actions))
+ 388               	.LVL25:
+  68:quantum/process_keycode/process_tap_dance.c ****     if (record->event.pressed) {
+ 389               		.loc 1 68 27 view .LVU88
+ 390 0070 4C87      		std Y+12,r20
+  69:quantum/process_keycode/process_tap_dance.c ****       action->state.keycode = keycode;
+ 391               		.loc 1 69 5 is_stmt 1 view .LVU89
+  69:quantum/process_keycode/process_tap_dance.c ****       action->state.keycode = keycode;
+ 392               		.loc 1 69 8 is_stmt 0 view .LVU90
+ 393 0072 1296      		adiw r26,2
+ 394 0074 8C91      		ld r24,X
+ 395               	.LVL26:
+  69:quantum/process_keycode/process_tap_dance.c ****       action->state.keycode = keycode;
+ 396               		.loc 1 69 8 view .LVU91
+ 397 0076 8823      		tst r24
+ 398 0078 01F0      		breq .L27
+  70:quantum/process_keycode/process_tap_dance.c ****       action->state.count++;
+ 399               		.loc 1 70 7 is_stmt 1 view .LVU92
+  70:quantum/process_keycode/process_tap_dance.c ****       action->state.count++;
+ 400               		.loc 1 70 29 is_stmt 0 view .LVU93
+ 401 007a 1887      		std Y+8,r17
+ 402 007c 0F83      		std Y+7,r16
+  71:quantum/process_keycode/process_tap_dance.c ****       action->state.timer = timer_read();
+ 403               		.loc 1 71 7 is_stmt 1 view .LVU94
+  71:quantum/process_keycode/process_tap_dance.c ****       action->state.timer = timer_read();
+ 404               		.loc 1 71 26 is_stmt 0 view .LVU95
+ 405 007e 8E81      		ldd r24,Y+6
+ 406 0080 8F5F      		subi r24,lo8(-(1))
+ 407 0082 8E83      		std Y+6,r24
+  72:quantum/process_keycode/process_tap_dance.c ****       process_tap_dance_action_on_each_tap (action);
+ 408               		.loc 1 72 7 is_stmt 1 view .LVU96
+  72:quantum/process_keycode/process_tap_dance.c ****       process_tap_dance_action_on_each_tap (action);
+ 409               		.loc 1 72 29 is_stmt 0 view .LVU97
+ 410 0084 0E94 0000 		call timer_read
+ 411               	.LVL27:
+  72:quantum/process_keycode/process_tap_dance.c ****       process_tap_dance_action_on_each_tap (action);
+ 412               		.loc 1 72 27 view .LVU98
+ 413 0088 9A87      		std Y+10,r25
+ 414 008a 8987      		std Y+9,r24
+  73:quantum/process_keycode/process_tap_dance.c **** 
+ 415               		.loc 1 73 7 is_stmt 1 view .LVU99
+ 416               	.LVL28:
+ 417               	.LBB24:
+ 418               	.LBI24:
+  36:quantum/process_keycode/process_tap_dance.c **** {
+ 419               		.loc 1 36 20 view .LVU100
+ 420               	.LBB25:
+  38:quantum/process_keycode/process_tap_dance.c **** }
+ 421               		.loc 1 38 3 view .LVU101
+ 422 008c E881      		ld r30,Y
+ 423 008e F981      		ldd r31,Y+1
+ 424               	.LVL29:
+ 425               	.LBB26:
+ 426               	.LBI26:
+  27:quantum/process_keycode/process_tap_dance.c ****                                                  void *user_data,
+ 427               		.loc 1 27 20 view .LVU102
+ 428               	.LBB27:
+  31:quantum/process_keycode/process_tap_dance.c ****     fn(state, user_data);
+ 429               		.loc 1 31 3 view .LVU103
+  31:quantum/process_keycode/process_tap_dance.c ****     fn(state, user_data);
+ 430               		.loc 1 31 6 is_stmt 0 view .LVU104
+ 431 0090 3097      		sbiw r30,0
+ 432 0092 01F0      		breq .L28
+  32:quantum/process_keycode/process_tap_dance.c ****   }
+ 433               		.loc 1 32 5 is_stmt 1 view .LVU105
+ 434 0094 6E85      		ldd r22,Y+14
+ 435 0096 7F85      		ldd r23,Y+15
+ 436 0098 C701      		movw r24,r14
+ 437 009a 8050      		subi r24,lo8(-(tap_dance_actions+6))
+ 438 009c 9040      		sbci r25,hi8(-(tap_dance_actions+6))
+ 439 009e 0995      		icall
+ 440               	.LVL30:
+ 441               	.L28:
+  32:quantum/process_keycode/process_tap_dance.c ****   }
+ 442               		.loc 1 32 5 is_stmt 0 view .LVU106
+ 443               	.LBE27:
+ 444               	.LBE26:
+ 445               	.LBE25:
+ 446               	.LBE24:
+  75:quantum/process_keycode/process_tap_dance.c ****         qk_tap_dance_action_t *paction = &tap_dance_actions[last_td - QK_TAP_DANCE];
+ 447               		.loc 1 75 7 is_stmt 1 view .LVU107
+  75:quantum/process_keycode/process_tap_dance.c ****         qk_tap_dance_action_t *paction = &tap_dance_actions[last_td - QK_TAP_DANCE];
+ 448               		.loc 1 75 11 is_stmt 0 view .LVU108
+ 449 00a0 8091 0000 		lds r24,last_td
+ 450 00a4 9091 0000 		lds r25,last_td+1
+  75:quantum/process_keycode/process_tap_dance.c ****         qk_tap_dance_action_t *paction = &tap_dance_actions[last_td - QK_TAP_DANCE];
+ 451               		.loc 1 75 10 view .LVU109
+ 452 00a8 0097      		sbiw r24,0
+ 453 00aa 01F0      		breq .L29
+  75:quantum/process_keycode/process_tap_dance.c ****         qk_tap_dance_action_t *paction = &tap_dance_actions[last_td - QK_TAP_DANCE];
+ 454               		.loc 1 75 19 discriminator 1 view .LVU110
+ 455 00ac 8017      		cp r24,r16
+ 456 00ae 9107      		cpc r25,r17
+ 457 00b0 01F0      		breq .L29
+ 458               	.LBB28:
+  76:quantum/process_keycode/process_tap_dance.c ****         paction->state.interrupted = true;
+ 459               		.loc 1 76 9 is_stmt 1 view .LVU111
+  76:quantum/process_keycode/process_tap_dance.c ****         paction->state.interrupted = true;
+ 460               		.loc 1 76 69 is_stmt 0 view .LVU112
+ 461 00b2 9157      		subi r25,113
+ 462 00b4 EC01      		movw r28,r24
+ 463               	.LVL31:
+  76:quantum/process_keycode/process_tap_dance.c ****         paction->state.interrupted = true;
+ 464               		.loc 1 76 69 view .LVU113
+ 465 00b6 84E0      		ldi r24,4
+ 466               		1:
+ 467 00b8 CC0F      		lsl r28
+ 468 00ba DD1F      		rol r29
+ 469 00bc 8A95      		dec r24
+ 470 00be 01F4      		brne 1b
+ 471               	.LVL32:
+  77:quantum/process_keycode/process_tap_dance.c ****         process_tap_dance_action_on_dance_finished (paction);
+ 472               		.loc 1 77 9 is_stmt 1 view .LVU114
+  77:quantum/process_keycode/process_tap_dance.c ****         process_tap_dance_action_on_dance_finished (paction);
+ 473               		.loc 1 77 36 is_stmt 0 view .LVU115
+ 474 00c0 CE01      		movw r24,r28
+ 475 00c2 8050      		subi r24,lo8(-(tap_dance_actions))
+ 476 00c4 9040      		sbci r25,hi8(-(tap_dance_actions))
+ 477               	.LVL33:
+  77:quantum/process_keycode/process_tap_dance.c ****         process_tap_dance_action_on_dance_finished (paction);
+ 478               		.loc 1 77 36 view .LVU116
+ 479 00c6 21E0      		ldi r18,lo8(1)
+ 480 00c8 FC01      		movw r30,r24
+ 481 00ca 2387      		std Z+11,r18
+  78:quantum/process_keycode/process_tap_dance.c ****         reset_tap_dance (&paction->state);
+ 482               		.loc 1 78 9 is_stmt 1 view .LVU117
+ 483 00cc 0E94 0000 		call process_tap_dance_action_on_dance_finished
+ 484               	.LVL34:
+  79:quantum/process_keycode/process_tap_dance.c ****       }
+ 485               		.loc 1 79 9 view .LVU118
+ 486 00d0 CE01      		movw r24,r28
+ 487 00d2 8050      		subi r24,lo8(-(tap_dance_actions+6))
+ 488 00d4 9040      		sbci r25,hi8(-(tap_dance_actions+6))
+ 489 00d6 0E94 0000 		call reset_tap_dance
+ 490               	.LVL35:
+ 491               	.L29:
+  79:quantum/process_keycode/process_tap_dance.c ****       }
+ 492               		.loc 1 79 9 is_stmt 0 view .LVU119
+ 493               	.LBE28:
+  82:quantum/process_keycode/process_tap_dance.c ****     }
+ 494               		.loc 1 82 7 is_stmt 1 view .LVU120
+  82:quantum/process_keycode/process_tap_dance.c ****     }
+ 495               		.loc 1 82 15 is_stmt 0 view .LVU121
+ 496 00da 1093 0000 		sts last_td+1,r17
+ 497 00de 0093 0000 		sts last_td,r16
+ 498               	.LVL36:
+ 499               	.L27:
+ 106:quantum/process_keycode/process_tap_dance.c **** 
+ 500               		.loc 1 106 1 view .LVU122
+ 501 00e2 81E0      		ldi r24,lo8(1)
+ 502               	/* epilogue start */
+ 503 00e4 DF91      		pop r29
+ 504 00e6 CF91      		pop r28
+ 505 00e8 1F91      		pop r17
+ 506 00ea 0F91      		pop r16
+ 507 00ec FF90      		pop r15
+ 508 00ee EF90      		pop r14
+ 509 00f0 0895      		ret
+ 510               	.LVL37:
+ 511               	.L24:
+  88:quantum/process_keycode/process_tap_dance.c ****       return true;
+ 512               		.loc 1 88 5 is_stmt 1 view .LVU123
+  88:quantum/process_keycode/process_tap_dance.c ****       return true;
+ 513               		.loc 1 88 8 is_stmt 0 view .LVU124
+ 514 00f2 4423      		tst r20
+ 515 00f4 01F0      		breq .L27
+  91:quantum/process_keycode/process_tap_dance.c ****       return true;
+ 516               		.loc 1 91 5 is_stmt 1 view .LVU125
+  91:quantum/process_keycode/process_tap_dance.c ****       return true;
+ 517               		.loc 1 91 8 is_stmt 0 view .LVU126
+ 518 00f6 8091 0000 		lds r24,highest_td
+ 519               	.LVL38:
+  91:quantum/process_keycode/process_tap_dance.c ****       return true;
+ 520               		.loc 1 91 8 view .LVU127
+ 521 00fa 8F3F      		cpi r24,lo8(-1)
+ 522 00fc 01F0      		breq .L27
+ 523 00fe C0E0      		ldi r28,lo8(tap_dance_actions)
+ 524 0100 D0E0      		ldi r29,hi8(tap_dance_actions)
+ 525               	.LBB29:
+  94:quantum/process_keycode/process_tap_dance.c ****       action = &tap_dance_actions[i];
+ 526               		.loc 1 94 14 view .LVU128
+ 527 0102 10E0      		ldi r17,0
+ 528 0104 00E0      		ldi r16,0
+ 529               	.LVL39:
+  98:quantum/process_keycode/process_tap_dance.c ****       process_tap_dance_action_on_dance_finished (action);
+ 530               		.loc 1 98 33 view .LVU129
+ 531 0106 FF24      		clr r15
+ 532 0108 F394      		inc r15
+ 533               	.LVL40:
+ 534               	.L31:
+  94:quantum/process_keycode/process_tap_dance.c ****       action = &tap_dance_actions[i];
+ 535               		.loc 1 94 21 is_stmt 1 discriminator 1 view .LVU130
+  94:quantum/process_keycode/process_tap_dance.c ****       action = &tap_dance_actions[i];
+ 536               		.loc 1 94 23 is_stmt 0 discriminator 1 view .LVU131
+ 537 010a 8091 0000 		lds r24,highest_td
+ 538 010e 082E      		mov __tmp_reg__,r24
+ 539 0110 000C      		lsl r0
+ 540 0112 990B      		sbc r25,r25
+  94:quantum/process_keycode/process_tap_dance.c ****       action = &tap_dance_actions[i];
+ 541               		.loc 1 94 5 discriminator 1 view .LVU132
+ 542 0114 8017      		cp r24,r16
+ 543 0116 9107      		cpc r25,r17
+ 544 0118 04F0      		brlt .L27
+  95:quantum/process_keycode/process_tap_dance.c ****       if (action->state.count == 0)
+ 545               		.loc 1 95 7 is_stmt 1 view .LVU133
+ 546               	.LVL41:
+  96:quantum/process_keycode/process_tap_dance.c ****         continue;
+ 547               		.loc 1 96 7 view .LVU134
+  96:quantum/process_keycode/process_tap_dance.c ****         continue;
+ 548               		.loc 1 96 10 is_stmt 0 view .LVU135
+ 549 011a 8E81      		ldd r24,Y+6
+ 550 011c 8823      		tst r24
+ 551 011e 01F0      		breq .L32
+  98:quantum/process_keycode/process_tap_dance.c ****       process_tap_dance_action_on_dance_finished (action);
+ 552               		.loc 1 98 7 is_stmt 1 view .LVU136
+  98:quantum/process_keycode/process_tap_dance.c ****       process_tap_dance_action_on_dance_finished (action);
+ 553               		.loc 1 98 33 is_stmt 0 view .LVU137
+ 554 0120 FB86      		std Y+11,r15
+  99:quantum/process_keycode/process_tap_dance.c ****       reset_tap_dance (&action->state);
+ 555               		.loc 1 99 7 is_stmt 1 view .LVU138
+ 556 0122 CE01      		movw r24,r28
+ 557 0124 0E94 0000 		call process_tap_dance_action_on_dance_finished
+ 558               	.LVL42:
+ 100:quantum/process_keycode/process_tap_dance.c ****     }
+ 559               		.loc 1 100 7 view .LVU139
+ 560 0128 CE01      		movw r24,r28
+ 561 012a 0696      		adiw r24,6
+ 562 012c 0E94 0000 		call reset_tap_dance
+ 563               	.LVL43:
+ 564               	.L32:
+  94:quantum/process_keycode/process_tap_dance.c ****       action = &tap_dance_actions[i];
+ 565               		.loc 1 94 38 discriminator 2 view .LVU140
+  94:quantum/process_keycode/process_tap_dance.c ****       action = &tap_dance_actions[i];
+ 566               		.loc 1 94 39 is_stmt 0 discriminator 2 view .LVU141
+ 567 0130 0F5F      		subi r16,-1
+ 568 0132 1F4F      		sbci r17,-1
+ 569               	.LVL44:
+  94:quantum/process_keycode/process_tap_dance.c ****       action = &tap_dance_actions[i];
+ 570               		.loc 1 94 39 discriminator 2 view .LVU142
+ 571 0134 6096      		adiw r28,16
+ 572 0136 00C0      		rjmp .L31
+ 573               	.LBE29:
+ 574               		.cfi_endproc
+ 575               	.LFE113:
+ 577               		.section	.text.matrix_scan_tap_dance,"ax",@progbits
+ 578               	.global	matrix_scan_tap_dance
+ 580               	matrix_scan_tap_dance:
+ 581               	.LFB114:
+ 108:quantum/process_keycode/process_tap_dance.c ****   if (highest_td == -1)
+ 582               		.loc 1 108 31 is_stmt 1 view -0
+ 583               		.cfi_startproc
+ 584 0000 0F93      		push r16
+ 585               	.LCFI8:
+ 586               		.cfi_def_cfa_offset 3
+ 587               		.cfi_offset 16, -2
+ 588 0002 1F93      		push r17
+ 589               	.LCFI9:
+ 590               		.cfi_def_cfa_offset 4
+ 591               		.cfi_offset 17, -3
+ 592 0004 CF93      		push r28
+ 593               	.LCFI10:
+ 594               		.cfi_def_cfa_offset 5
+ 595               		.cfi_offset 28, -4
+ 596 0006 DF93      		push r29
+ 597               	.LCFI11:
+ 598               		.cfi_def_cfa_offset 6
+ 599               		.cfi_offset 29, -5
+ 600               	/* prologue: function */
+ 601               	/* frame size = 0 */
+ 602               	/* stack size = 4 */
+ 603               	.L__stack_usage = 4
+ 109:quantum/process_keycode/process_tap_dance.c ****     return;
+ 604               		.loc 1 109 3 view .LVU144
+ 109:quantum/process_keycode/process_tap_dance.c ****     return;
+ 605               		.loc 1 109 6 is_stmt 0 view .LVU145
+ 606 0008 8091 0000 		lds r24,highest_td
+ 607 000c C0E0      		ldi r28,lo8(tap_dance_actions)
+ 608 000e D0E0      		ldi r29,hi8(tap_dance_actions)
+ 609               	.LBB30:
+ 112:quantum/process_keycode/process_tap_dance.c ****     qk_tap_dance_action_t *action = &tap_dance_actions[i];
+ 610               		.loc 1 112 12 view .LVU146
+ 611 0010 10E0      		ldi r17,0
+ 612 0012 00E0      		ldi r16,0
+ 613               	.LBE30:
+ 109:quantum/process_keycode/process_tap_dance.c ****     return;
+ 614               		.loc 1 109 6 view .LVU147
+ 615 0014 8F3F      		cpi r24,lo8(-1)
+ 616 0016 01F4      		brne .L54
+ 617               	.L52:
+ 618               	/* epilogue start */
+ 120:quantum/process_keycode/process_tap_dance.c **** 
+ 619               		.loc 1 120 1 view .LVU148
+ 620 0018 DF91      		pop r29
+ 621 001a CF91      		pop r28
+ 622 001c 1F91      		pop r17
+ 623 001e 0F91      		pop r16
+ 624 0020 0895      		ret
+ 625               	.LVL45:
+ 626               	.L58:
+ 627               	.LBB32:
+ 628               	.LBB31:
+ 113:quantum/process_keycode/process_tap_dance.c **** 
+ 629               		.loc 1 113 5 is_stmt 1 view .LVU149
+ 115:quantum/process_keycode/process_tap_dance.c ****       process_tap_dance_action_on_dance_finished (action);
+ 630               		.loc 1 115 5 view .LVU150
+ 115:quantum/process_keycode/process_tap_dance.c ****       process_tap_dance_action_on_dance_finished (action);
+ 631               		.loc 1 115 8 is_stmt 0 view .LVU151
+ 632 0022 8E81      		ldd r24,Y+6
+ 633 0024 8823      		tst r24
+ 634 0026 01F0      		breq .L56
+ 115:quantum/process_keycode/process_tap_dance.c ****       process_tap_dance_action_on_dance_finished (action);
+ 635               		.loc 1 115 32 discriminator 1 view .LVU152
+ 636 0028 8985      		ldd r24,Y+9
+ 637 002a 9A85      		ldd r25,Y+10
+ 638 002c 0E94 0000 		call timer_elapsed
+ 639               	.LVL46:
+ 115:quantum/process_keycode/process_tap_dance.c ****       process_tap_dance_action_on_dance_finished (action);
+ 640               		.loc 1 115 29 discriminator 1 view .LVU153
+ 641 0030 893C      		cpi r24,-55
+ 642 0032 9105      		cpc r25,__zero_reg__
+ 643 0034 00F0      		brlo .L56
+ 116:quantum/process_keycode/process_tap_dance.c ****       reset_tap_dance (&action->state);
+ 644               		.loc 1 116 7 is_stmt 1 view .LVU154
+ 645 0036 CE01      		movw r24,r28
+ 646 0038 0E94 0000 		call process_tap_dance_action_on_dance_finished
+ 647               	.LVL47:
+ 117:quantum/process_keycode/process_tap_dance.c ****     }
+ 648               		.loc 1 117 7 view .LVU155
+ 649 003c CE01      		movw r24,r28
+ 650 003e 0696      		adiw r24,6
+ 651 0040 0E94 0000 		call reset_tap_dance
+ 652               	.LVL48:
+ 653               	.L56:
+ 117:quantum/process_keycode/process_tap_dance.c ****     }
+ 654               		.loc 1 117 7 is_stmt 0 view .LVU156
+ 655               	.LBE31:
+ 112:quantum/process_keycode/process_tap_dance.c ****     qk_tap_dance_action_t *action = &tap_dance_actions[i];
+ 656               		.loc 1 112 36 is_stmt 1 discriminator 2 view .LVU157
+ 112:quantum/process_keycode/process_tap_dance.c ****     qk_tap_dance_action_t *action = &tap_dance_actions[i];
+ 657               		.loc 1 112 37 is_stmt 0 discriminator 2 view .LVU158
+ 658 0044 0F5F      		subi r16,-1
+ 659 0046 1F4F      		sbci r17,-1
+ 660               	.LVL49:
+ 112:quantum/process_keycode/process_tap_dance.c ****     qk_tap_dance_action_t *action = &tap_dance_actions[i];
+ 661               		.loc 1 112 37 discriminator 2 view .LVU159
+ 662 0048 6096      		adiw r28,16
+ 663               	.LVL50:
+ 664               	.L54:
+ 112:quantum/process_keycode/process_tap_dance.c ****     qk_tap_dance_action_t *action = &tap_dance_actions[i];
+ 665               		.loc 1 112 19 is_stmt 1 discriminator 1 view .LVU160
+ 112:quantum/process_keycode/process_tap_dance.c ****     qk_tap_dance_action_t *action = &tap_dance_actions[i];
+ 666               		.loc 1 112 21 is_stmt 0 discriminator 1 view .LVU161
+ 667 004a 8091 0000 		lds r24,highest_td
+ 668 004e 082E      		mov __tmp_reg__,r24
+ 669 0050 000C      		lsl r0
+ 670 0052 990B      		sbc r25,r25
+ 112:quantum/process_keycode/process_tap_dance.c ****     qk_tap_dance_action_t *action = &tap_dance_actions[i];
+ 671               		.loc 1 112 3 discriminator 1 view .LVU162
+ 672 0054 8017      		cp r24,r16
+ 673 0056 9107      		cpc r25,r17
+ 674 0058 04F4      		brge .L58
+ 675 005a 00C0      		rjmp .L52
+ 676               	.LBE32:
+ 677               		.cfi_endproc
+ 678               	.LFE114:
+ 680               		.section	.data.highest_td,"aw"
+ 683               	highest_td:
+ 684 0000 FF        		.byte	-1
+ 685               		.section	.bss.last_td,"aw",@nobits
+ 688               	last_td:
+ 689 0000 0000      		.zero	2
+ 690               		.text
+ 691               	.Letext0:
+ 692               		.file 2 "/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/stdint.h"
+ 693               		.file 3 "/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/lib/avr-gcc/9/gcc/avr/9.3.0/include/stddef.h"
+ 694               		.file 4 "./tmk_core/common/keyboard.h"
+ 695               		.file 5 "./tmk_core/common/action.h"
+ 696               		.file 6 "./tmk_core/protocol/lufa/LUFA-git/LUFA/Drivers/USB/Core/AVR8/../StdRequestType.h"
+ 697               		.file 7 "./tmk_core/protocol/lufa/LUFA-git/LUFA/Drivers/USB/Core/AVR8/../DeviceStandardReq.h"
+ 698               		.file 8 "./tmk_core/protocol/lufa/LUFA-git/LUFA/Drivers/USB/Core/USBTask.h"
+ 699               		.file 9 "./tmk_core/protocol/lufa/LUFA-git/LUFA/Drivers/USB/Core/HostStandardReq.h"
+ 700               		.file 10 "/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/stdio.h"
+ 701               		.file 11 "./tmk_core/common/report.h"
+ 702               		.file 12 "./tmk_core/common/host.h"
+ 703               		.file 13 "./tmk_core/common/debug.h"
+ 704               		.file 14 "./quantum/keycode_config.h"
+ 705               		.file 15 "./quantum/keymap.h"
+ 706               		.file 16 "./quantum/light_ws2812.h"
+ 707               		.file 17 "./quantum/rgblight.h"
+ 708               		.file 18 "./tmk_core/common/action_layer.h"
+ 709               		.file 19 "./tmk_core/common/timer.h"
+ 710               		.file 20 "./tmk_core/common/action_util.h"
+ 711               		.file 21 "/opt/homebrew/Cellar/avr-gcc@9/9.3.0_3/avr/include/stdlib.h"
+ 712               		.file 22 "./quantum/process_keycode/process_tap_dance.h"
+ 713               		.file 23 "./quantum/quantum.h"
+ 714               		.file 24 "./quantum/quantum_keycodes.h"
+DEFINED SYMBOLS
+                            *ABS*:0000000000000000 process_tap_dance.c
+/var/folders/0z/ym_gdwfd5tg7m49f_1nfh8300000gn/T//ccP5ggIh.s:2      *ABS*:000000000000003e __SP_H__
+/var/folders/0z/ym_gdwfd5tg7m49f_1nfh8300000gn/T//ccP5ggIh.s:3      *ABS*:000000000000003d __SP_L__
+/var/folders/0z/ym_gdwfd5tg7m49f_1nfh8300000gn/T//ccP5ggIh.s:4      *ABS*:000000000000003f __SREG__
+/var/folders/0z/ym_gdwfd5tg7m49f_1nfh8300000gn/T//ccP5ggIh.s:5      *ABS*:0000000000000000 __tmp_reg__
+/var/folders/0z/ym_gdwfd5tg7m49f_1nfh8300000gn/T//ccP5ggIh.s:6      *ABS*:0000000000000001 __zero_reg__
+/var/folders/0z/ym_gdwfd5tg7m49f_1nfh8300000gn/T//ccP5ggIh.s:12     .text.process_tap_dance_action_on_dance_finished:0000000000000000 process_tap_dance_action_on_dance_finished
+/var/folders/0z/ym_gdwfd5tg7m49f_1nfh8300000gn/T//ccP5ggIh.s:84     .text.qk_tap_dance_pair_finished:0000000000000000 qk_tap_dance_pair_finished
+/var/folders/0z/ym_gdwfd5tg7m49f_1nfh8300000gn/T//ccP5ggIh.s:131    .text.qk_tap_dance_pair_reset:0000000000000000 qk_tap_dance_pair_reset
+/var/folders/0z/ym_gdwfd5tg7m49f_1nfh8300000gn/T//ccP5ggIh.s:178    .text.reset_tap_dance:0000000000000000 reset_tap_dance
+/var/folders/0z/ym_gdwfd5tg7m49f_1nfh8300000gn/T//ccP5ggIh.s:688    .bss.last_td:0000000000000000 last_td
+/var/folders/0z/ym_gdwfd5tg7m49f_1nfh8300000gn/T//ccP5ggIh.s:284    .text.process_tap_dance:0000000000000000 process_tap_dance
+/var/folders/0z/ym_gdwfd5tg7m49f_1nfh8300000gn/T//ccP5ggIh.s:683    .data.highest_td:0000000000000000 highest_td
+/var/folders/0z/ym_gdwfd5tg7m49f_1nfh8300000gn/T//ccP5ggIh.s:580    .text.matrix_scan_tap_dance:0000000000000000 matrix_scan_tap_dance
+
+UNDEFINED SYMBOLS
+register_code16
+unregister_code16
+tap_dance_actions
+timer_read
+timer_elapsed
+__do_copy_data
+__do_clear_bss
